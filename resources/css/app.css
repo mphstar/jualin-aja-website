@@ -1,0 +1,250 @@
+@import 'tailwindcss';
+@import 'tw-animate-css';
+/* Figtree — muka huruf yang dipakai referensi. Di-host sendiri lewat
+   @fontsource, bukan CDN, supaya panel tetap jalan tanpa jaringan. */
+@import '@fontsource-variable/figtree';
+
+/* Tailwind v4 memindai kelas dari dua tempat: komponen React dan kerangka
+   Blade yang membungkusnya. `resources/views` wajib disebut eksplisit —
+   kelas di app.blade.php tidak terjangkau pemindaian otomatis. */
+@source '../js';
+@source '../views';
+
+@custom-variant dark (&:is(.dark *));
+
+:root {
+    /*
+   * Radius bertingkat, disalin dari sistem referensi:
+   * panel (kartu & sidebar) lebih tumpul daripada kontrol (tombol, input,
+   * pill nav). Satu angka radius untuk semuanya membuat kartu terasa
+   * terlalu tajam atau tombol terlalu bulat — tidak ada yang pas.
+   */
+    --radius: 0.75rem;
+    --panel-radius: 0.875rem;
+    --control-radius: 0.625rem;
+
+    /*
+   * Kertas, kartu, dan sidebar SEMUANYA putih murni.
+   * Yang memisahkan ketiganya cuma garis rambut `--border` — tidak ada
+   * beda keterangan, tidak ada bayangan. Menggelapkan `--background`
+   * sedikit saja langsung membuat panel terasa lebih berat daripada
+   * yang dimaksud, karena setiap kartu jadi punya dua sinyal batas.
+   *
+   * Abu hanya boleh muncul di tiga tempat: pill nav aktif
+   * (`--sidebar-accent`), kotak ikon (`--muted`), dan garis.
+   */
+    /*
+   * Netral pada rona 286 dengan kroma nyaris nol (0.001–0.014).
+   * Sebelumnya panel ini memakai slate bawaan shadcn (rona ~257, kroma
+   * sampai 0.046) — abunya kebiruan dan itulah yang membuat warnanya
+   * terus terasa meleset dari referensi meski nilai terangnya mirip.
+   */
+    --background: oklch(1 0 0);
+    --foreground: oklch(0.19 0.006 286);
+    --card: oklch(1 0 0);
+    --card-foreground: oklch(0.19 0.006 286);
+    --popover: oklch(1 0 0);
+    --popover-foreground: oklch(0.19 0.006 286);
+    --primary: oklch(0.21 0.006 286);
+    --primary-foreground: oklch(0.985 0 0);
+    --secondary: oklch(0.979 0.001 286);
+    --secondary-foreground: oklch(0.24 0.006 286);
+    --muted: oklch(0.979 0.001 286);
+    --muted-foreground: oklch(0.552 0.014 286);
+    --accent: oklch(0.972 0.002 286);
+    --accent-foreground: oklch(0.19 0.006 286);
+    --destructive: oklch(0.577 0.245 27.325);
+    --destructive-foreground: oklch(0.985 0 0);
+    --border: oklch(0.938 0.003 286);
+    --input: oklch(0.908 0.004 286);
+
+    /* Satu-satunya warna merek: indigo. Dipakai cincin fokus, tautan,
+     dan ikon item nav yang sedang aktif. Tidak untuk isian tombol. */
+    --brand: oklch(0.488 0.243 264.376);
+    --ring: var(--brand);
+
+    /* Warna status langganan & pembayaran (dipakai BadgeStatus) */
+    --sukses: oklch(0.596 0.145 163.225);
+    --sukses-foreground: oklch(0.979 0.021 166.113);
+    --sukses-lembut: oklch(0.962 0.044 156.743);
+    --peringatan: oklch(0.666 0.179 58.318);
+    --peringatan-foreground: oklch(0.987 0.022 95.277);
+    --peringatan-lembut: oklch(0.973 0.071 103.193);
+    --info: oklch(0.588 0.158 254.624);
+    --info-foreground: oklch(0.97 0.014 254.604);
+    --info-lembut: oklch(0.951 0.026 236.824);
+    --bahaya-lembut: oklch(0.954 0.038 17.38);
+
+    /* Tangga biru satu rona, bukan pelangi — grafik ikut disiplin yang sama
+     dengan sisa panel: kroma hanya untuk membedakan deret, bukan menghias. */
+    --chart-1: oklch(0.488 0.243 264.376);
+    --chart-2: oklch(0.623 0.214 259.815);
+    --chart-3: oklch(0.746 0.126 254);
+    --chart-4: oklch(0.838 0.072 251);
+    --chart-5: oklch(0.906 0.038 249);
+
+    /* Kartu sidebar: putih, sama dengan kertas — dibatasi garis, bukan warna. */
+    --sidebar: oklch(1 0 0);
+    --sidebar-foreground: oklch(0.19 0.006 286);
+    --sidebar-primary: oklch(0.21 0.006 286);
+    --sidebar-primary-foreground: oklch(0.985 0 0);
+    --sidebar-accent: oklch(0.972 0.002 286);
+    --sidebar-accent-foreground: oklch(0.19 0.006 286);
+    --sidebar-border: oklch(0.938 0.003 286);
+    --sidebar-ring: var(--brand);
+}
+
+.dark {
+    --background: oklch(0.152 0.004 286);
+    --foreground: oklch(0.985 0 0);
+    --card: oklch(0.197 0.006 286);
+    --card-foreground: oklch(0.985 0 0);
+    --popover: oklch(0.197 0.006 286);
+    --popover-foreground: oklch(0.985 0 0);
+    --primary: oklch(0.985 0 0);
+    --primary-foreground: oklch(0.21 0.006 286);
+    --secondary: oklch(0.264 0.006 286);
+    --secondary-foreground: oklch(0.985 0 0);
+    --muted: oklch(0.264 0.006 286);
+    --muted-foreground: oklch(0.708 0.014 286);
+    --accent: oklch(1 0 0 / 9%);
+    --accent-foreground: oklch(0.985 0 0);
+    --destructive: oklch(0.704 0.191 22.216);
+    --destructive-foreground: oklch(0.985 0 0);
+    --border: oklch(1 0 0 / 7%);
+    --input: oklch(1 0 0 / 14%);
+
+    --brand: oklch(0.715 0.163 261);
+    --ring: var(--brand);
+
+    --sukses: oklch(0.696 0.17 162.48);
+    --sukses-foreground: oklch(0.393 0.095 152.535);
+    --sukses-lembut: oklch(0.393 0.095 152.535 / 35%);
+    --peringatan: oklch(0.769 0.188 70.08);
+    --peringatan-foreground: oklch(0.414 0.112 45.904);
+    --peringatan-lembut: oklch(0.414 0.112 45.904 / 35%);
+    --info: oklch(0.707 0.165 254.624);
+    --info-foreground: oklch(0.379 0.146 265.522);
+    --info-lembut: oklch(0.379 0.146 265.522 / 35%);
+    --bahaya-lembut: oklch(0.396 0.141 25.723 / 35%);
+
+    --chart-1: oklch(0.585 0.233 263);
+    --chart-2: oklch(0.672 0.176 260);
+    --chart-3: oklch(0.752 0.122 256);
+    --chart-4: oklch(0.826 0.078 252);
+    --chart-5: oklch(0.894 0.042 250);
+
+    --sidebar: oklch(0.197 0.006 286);
+    --sidebar-foreground: oklch(0.985 0 0);
+    --sidebar-primary: oklch(0.985 0 0);
+    --sidebar-primary-foreground: oklch(0.985 0 0);
+    --sidebar-accent: oklch(1 0 0 / 9%);
+    --sidebar-accent-foreground: oklch(0.985 0 0);
+    --sidebar-border: oklch(1 0 0 / 7%);
+    --sidebar-ring: var(--brand);
+}
+
+@theme inline {
+    --color-background: var(--background);
+    --color-foreground: var(--foreground);
+    --color-card: var(--card);
+    --color-card-foreground: var(--card-foreground);
+    --color-popover: var(--popover);
+    --color-popover-foreground: var(--popover-foreground);
+    --color-primary: var(--primary);
+    --color-primary-foreground: var(--primary-foreground);
+    --color-secondary: var(--secondary);
+    --color-secondary-foreground: var(--secondary-foreground);
+    --color-muted: var(--muted);
+    --color-muted-foreground: var(--muted-foreground);
+    --color-accent: var(--accent);
+    --color-accent-foreground: var(--accent-foreground);
+    --color-destructive: var(--destructive);
+    --color-destructive-foreground: var(--destructive-foreground);
+    --color-border: var(--border);
+    --color-input: var(--input);
+    --color-ring: var(--ring);
+
+    --color-sukses: var(--sukses);
+    --color-sukses-foreground: var(--sukses-foreground);
+    --color-sukses-lembut: var(--sukses-lembut);
+    --color-peringatan: var(--peringatan);
+    --color-peringatan-foreground: var(--peringatan-foreground);
+    --color-peringatan-lembut: var(--peringatan-lembut);
+    --color-info: var(--info);
+    --color-info-foreground: var(--info-foreground);
+    --color-info-lembut: var(--info-lembut);
+    --color-bahaya-lembut: var(--bahaya-lembut);
+
+    --color-chart-1: var(--chart-1);
+    --color-chart-2: var(--chart-2);
+    --color-chart-3: var(--chart-3);
+    --color-chart-4: var(--chart-4);
+    --color-chart-5: var(--chart-5);
+
+    --color-sidebar: var(--sidebar);
+    --color-sidebar-foreground: var(--sidebar-foreground);
+    --color-sidebar-primary: var(--sidebar-primary);
+    --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+    --color-sidebar-accent: var(--sidebar-accent);
+    --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+    --color-sidebar-border: var(--sidebar-border);
+    --color-sidebar-ring: var(--sidebar-ring);
+
+    --color-brand: var(--brand);
+
+    --radius-sm: calc(var(--radius) - 4px);
+    --radius-md: calc(var(--radius) - 2px);
+    --radius-lg: var(--radius);
+    --radius-xl: calc(var(--radius) + 4px);
+    --radius-panel: var(--panel-radius);
+    --radius-control: var(--control-radius);
+
+    --font-sans: 'Figtree Variable', system-ui, -apple-system, sans-serif;
+    --font-mono: ui-monospace, 'Cascadia Code', Consolas, monospace;
+}
+
+@layer base {
+    * {
+        @apply border-border outline-ring/50;
+    }
+
+    html {
+        color-scheme: light;
+        /* Pasangan wajib dengan aturan di <body>: hanya mengunci salah satunya
+       tetap menyisakan celah scroll horizontal di sebagian peramban. */
+        overflow-x: clip;
+    }
+
+    html.dark {
+        color-scheme: dark;
+    }
+
+    body {
+        @apply bg-background text-foreground;
+        /* Cegah scroll horizontal di seluruh aplikasi (lihat PRD §8) */
+        overflow-x: clip;
+        -webkit-font-smoothing: antialiased;
+    }
+
+    /* Judul dirapatkan seperti di referensi — Figtree agak lapang secara bawaan. */
+    h1,
+    h2,
+    h3,
+    h4 {
+        letter-spacing: -0.021em;
+        overflow-wrap: anywhere;
+        min-width: 0;
+    }
+
+    :focus-visible {
+        outline: 2px solid var(--ring);
+        outline-offset: 2px;
+        transition: none;
+    }
+
+    /* Angka rata kolom pada tabel & kartu statistik */
+    .angka-tabular {
+        font-variant-numeric: tabular-nums;
+    }
+}

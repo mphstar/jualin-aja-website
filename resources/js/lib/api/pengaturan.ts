@@ -1,0 +1,21 @@
+import { ambil, ganti } from '@/lib/api/client';
+import type { DurasiPaket } from '@/types';
+
+export type HargaPaket = Record<DurasiPaket, number>;
+
+export function ambilHargaPaket(): Promise<HargaPaket> {
+    return ambil<HargaPaket>('/pengaturan/harga-paket');
+}
+
+/**
+ * Menyimpan harga paket.
+ *
+ * Harga yang sudah tercetak di invoice lama TIDAK ikut berubah — nominal
+ * pembayaran disimpan per transaksi, jadi perubahan di sini hanya berlaku
+ * untuk perpanjangan berikutnya.
+ *
+ * Selisihnya dicatat ke log oleh server, yang memang memegang nilai lamanya.
+ */
+export function simpanHargaPaket(harga: HargaPaket): Promise<HargaPaket> {
+    return ganti<HargaPaket>('/pengaturan/harga-paket', harga);
+}
