@@ -46,6 +46,8 @@ class DatabaseSeeder extends Seeder
             $this->call([
                 PenggunaLanggananSeeder::class,
                 EbookSeeder::class,
+                // Menempel pada toko yang sudah ada, jadi harus sesudahnya.
+                PosSeeder::class,
                 // Terakhir: log diturunkan dari data yang sudah ada, bukan dikarang.
                 LogAktivitasSeeder::class,
             ]);

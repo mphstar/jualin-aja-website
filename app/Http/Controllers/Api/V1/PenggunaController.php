@@ -18,6 +18,7 @@ use App\Http\Resources\PosUserRingkasResource;
 use App\Http\Resources\UnduhanRingkasResource;
 use App\Models\PosUser;
 use App\Support\FilterStatusLangganan;
+use App\Support\RingkasanPos;
 use Illuminate\Database\Eloquent\Builder as EloquentBuilder;
 use Illuminate\Http\Request;
 
@@ -64,6 +65,10 @@ class PenggunaController extends Controller
             'riwayatUnduhan' => UnduhanRingkasResource::collection(
                 $pengguna->unduhan()->with(['posUser', 'ebook'])->orderByDesc('tanggal')->get(),
             ),
+            // Seberapa hidup kasirnya. Ditaruh di halaman yang sama dengan
+            // tanggal berakhir langganan supaya "aktif tapi tidak dipakai"
+            // terlihat sebagai satu gambaran, bukan dua laporan terpisah.
+            'ringkasanPos' => RingkasanPos::untuk($pengguna),
         ];
     }
 

@@ -6,7 +6,9 @@ import {
     CreditCardIcon,
     MailIcon,
     MapPinIcon,
+    PackageIcon,
     PhoneIcon,
+    ReceiptTextIcon,
     RotateCcwIcon,
     StoreIcon,
     TicketPlusIcon,
@@ -40,7 +42,7 @@ import { DialogPerpanjang } from '@/features/langganan/DialogPerpanjang';
 import type { TargetPerpanjang } from '@/features/langganan/DialogPerpanjang';
 import { DialogTangguhkan } from '@/features/pengguna/DialogTangguhkan';
 import { api, KesalahanApi } from '@/lib/api';
-import type { DetailPengguna } from '@/lib/api';
+import type { DetailPengguna, RingkasanPos } from '@/lib/api';
 import {
     formatRupiah,
     formatTanggal,
@@ -100,8 +102,13 @@ export function HalamanDetailPengguna({ id }: { id: string }) {
         );
     }
 
-    const { user, riwayatLangganan, riwayatPembayaran, riwayatUnduhan } =
-        detail;
+    const {
+        user,
+        riwayatLangganan,
+        riwayatPembayaran,
+        riwayatUnduhan,
+        ringkasanPos,
+    } = detail;
 
     async function pulihkan() {
         try {
@@ -214,6 +221,7 @@ export function HalamanDetailPengguna({ id }: { id: string }) {
                     <TabsTrigger value="unduhan">
                         Unduhan ({riwayatUnduhan.length})
                     </TabsTrigger>
+                    <TabsTrigger value="kasir">Kasir</TabsTrigger>
                 </TabsList>
 
                 {/* ---------------- Profil ---------------- */}
@@ -447,6 +455,10 @@ export function HalamanDetailPengguna({ id }: { id: string }) {
                         )}
                     </div>
                 </TabsContent>
+                {/* ---------------- Kasir (aplikasi POS) ---------------- */}
+                <TabsContent value="kasir" className="mt-4">
+                    <PanelKasir ringkasan={ringkasanPos} />
+                </TabsContent>
             </Tabs>
 
             <DialogPerpanjang
@@ -528,5 +540,118 @@ function KerangkaDetail() {
                 <Skeleton className="h-48" />
             </div>
         </>
+    );
+}
+
+/**
+ * Ringkasan pemakaian kasir.
+ *
+ * Pertanyaan yang dijawabnya bukan "sudah bayar belum" — itu sudah ada di tab
+ * Langganan — melainkan **"benar-benar dipakai tidak?"**. Toko berlangganan
+ * setahun yang nol transaksi selama sebulan adalah toko yang tidak akan
+ * memperpanjang, dan itu satu-satunya sinyal yang muncul sebelum ia pergi.
+ */
+function PanelKasir({ ringkasan }: { ringkasan: RingkasanPos }) {
+    const belumDipakai = ringkasan.produk === 0;
+
+    if (belumDipakai) {
+        return (
+            <div className="overflow-hidden rounded-lg border">
+                <EmptyState
+                    ikon={<PackageIcon className="size-8" />}
+                    judul="Kasir belum disiapkan"
+                    keterangan="Toko ini belum menambahkan satu pun produk lewat aplikasi POS."
+                />
+            </div>
+        );
+    }
+
+    return (
+        <div className="grid gap-4 lg:grid-cols-2">
+            <Card>
+                <CardHeader>
+                    <CardTitle className="text-base">Master data</CardTitle>
+                </CardHeader>
+                <CardContent className="grid gap-3">
+                    <BarisData
+                        ikon={<PackageIcon className="size-4" />}
+                        label="Produk"
+                    >
+                        <span className="angka-tabular">
+                            {ringkasan.produk} produk · {ringkasan.kategori}{' '}
+                            kategori
+                        </span>
+                    </BarisData>
+                    <Separator />
+                    <BarisData
+                        ikon={<TriangleAlertIcon className="size-4" />}
+                        label="Stok habis"
+                    >
+                        <span
+                            className={
+                                ringkasan.produkHabis > 0
+                                    ? 'angka-tabular text-peringatan'
+                                    : 'angka-tabular'
+                            }
+                        >
+                            {ringkasan.produkHabis} produk
+                        </span>
+                    </BarisData>
+                    <Separator />
+                    <BarisData
+                        ikon={<ReceiptTextIcon className="size-4" />}
+                        label="Transaksi terakhir"
+                    >
+                        {ringkasan.transaksiTerakhir
+                            ? formatWaktu(ringkasan.transaksiTerakhir)
+                            : 'Belum pernah'}
+                    </BarisData>
+                </CardContent>
+            </Card>
+
+            <Card>
+                <CardHeader>
+                    <CardTitle className="text-base">
+                        Aktivitas 30 hari
+                    </CardTitle>
+                </CardHeader>
+                <CardContent className="grid gap-3">
+                    <BarisData
+                        ikon={<ReceiptTextIcon className="size-4" />}
+                        label="Transaksi"
+                    >
+                        <span className="angka-tabular">
+                            {ringkasan.transaksi30Hari} struk
+                        </span>
+                    </BarisData>
+                    <Separator />
+                    <BarisData
+                        ikon={<CreditCardIcon className="size-4" />}
+                        label="Omzet"
+                    >
+                        <span className="angka-tabular">
+                            {formatRupiah(ringkasan.omzet30Hari)}
+                        </span>
+                    </BarisData>
+                    <Separator />
+                    <BarisData
+                        ikon={<TicketPlusIcon className="size-4" />}
+                        label="Bayar nanti"
+                    >
+                        <span className="angka-tabular">
+                            {ringkasan.piutangJumlah} struk ·{' '}
+                            {formatRupiah(ringkasan.piutangTotal)}
+                        </span>
+                    </BarisData>
+
+                    {!ringkasan.aktif && (
+                        <p className="mt-1 rounded-md bg-peringatan-lembut px-3 py-2 text-xs text-peringatan">
+                            Tidak ada transaksi sama sekali dalam 30 hari
+                            terakhir, padahal produknya sudah disiapkan.
+                        </p>
+                    )}
+                </CardContent>
+            </Card>
+        </div>
     );
 }

@@ -17,10 +17,11 @@ export type StatusLangganan =
 export type SumberLangganan =
     'TRIAL' | 'PEMBELIAN' | 'PERPANJANGAN_MANUAL' | 'HADIAH';
 
-export type StatusPembayaran = 'LUNAS' | 'MENUNGGU' | 'GAGAL' | 'REFUND';
+export type StatusPembayaran =
+    'LUNAS' | 'MENUNGGU' | 'GAGAL' | 'KEDALUWARSA' | 'REFUND';
 
 export type MetodePembayaran =
-    'TRANSFER_BANK' | 'QRIS' | 'VIRTUAL_ACCOUNT' | 'MANUAL';
+    'TRANSFER_BANK' | 'QRIS' | 'VIRTUAL_ACCOUNT' | 'EWALLET' | 'MANUAL';
 
 export type KategoriEbook =
     'MINUMAN' | 'MAKANAN_BERAT' | 'SNACK' | 'DESSERT' | 'BAKERY' | 'BUMBU_SAUS';
@@ -198,6 +199,8 @@ export interface StatistikDasbor {
     kedaluwarsa: number;
     pendapatanBulanIni: number;
     deltaPendapatanPersen: number;
+    /** Toko yang kasirnya benar-benar dipakai 30 hari terakhir. */
+    tokoMemakaiKasir: number;
 }
 
 // ============================================================

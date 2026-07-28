@@ -29,7 +29,11 @@ export const api = {
 };
 
 export { KesalahanApi } from '@/lib/api/client';
-export type { ParamsPengguna, DetailPengguna } from '@/lib/api/pengguna';
+export type {
+    ParamsPengguna,
+    DetailPengguna,
+    RingkasanPos,
+} from '@/lib/api/pengguna';
 export type { ParamsLangganan } from '@/lib/api/langganan';
 export type { ParamsEbook, MasukanEbook, DetailEbook } from '@/lib/api/ebook';
 export type {

@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace Database\Factories;
 
+use App\Enums\DurasiPaket;
 use App\Enums\JenisUsaha;
+use App\Enums\SumberLangganan;
 use App\Models\PosUser;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
@@ -37,6 +39,34 @@ class PosUserFactory extends Factory
             'alasan_penangguhan' => null,
             'password' => null,
         ];
+    }
+
+    /** Toko yang bisa masuk dari aplikasi POS. */
+    public function bisaMasuk(string $kataSandi = 'rahasia123'): static
+    {
+        return $this->state(fn (array $attributes): array => [
+            'password' => $kataSandi,
+            'alamat' => 'Jl. Contoh No. 1',
+        ]);
+    }
+
+    /** Langganan aktif tanpa membuat riwayat siklus — cukup kolom ringkasannya. */
+    public function berlangganan(int $sisaHari = 30): static
+    {
+        return $this->state(fn (array $attributes): array => [
+            'langganan_berakhir_pada' => now()->addDays($sisaHari),
+            'langganan_durasi' => DurasiPaket::Bulanan,
+            'langganan_sumber' => SumberLangganan::Pembelian,
+        ]);
+    }
+
+    public function kedaluwarsa(): static
+    {
+        return $this->state(fn (array $attributes): array => [
+            'langganan_berakhir_pada' => now()->subDays(3),
+            'langganan_durasi' => DurasiPaket::Bulanan,
+            'langganan_sumber' => SumberLangganan::Pembelian,
+        ]);
     }
 
     public function ditangguhkan(string $alasan = 'Melanggar ketentuan layanan.'): static

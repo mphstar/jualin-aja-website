@@ -1,6 +1,8 @@
 <?php
 
 use App\Http\Middleware\HandleInertiaRequests;
+use App\Http\Middleware\PastikanLanggananBerjalan;
+use App\Http\Middleware\PastikanPosUser;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -29,6 +31,11 @@ return Application::configure(basePath: dirname(__DIR__))
          * Token pribadi tetap bisa dipakai — jalur untuk aplikasi POS mobile.
          */
         $middleware->statefulApi();
+
+        $middleware->alias([
+            'pos' => PastikanPosUser::class,
+            'langganan.berjalan' => PastikanLanggananBerjalan::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(
@@ -42,7 +49,7 @@ return Application::configure(basePath: dirname(__DIR__))
          * 500 sengaja dikecualikan di lokal: halaman debug Laravel jauh lebih
          * berguna saat mengembangkan daripada layar "terjadi kesalahan".
          */
-        $exceptions->respond(function (Response $respons, \Throwable $e, Request $request) {
+        $exceptions->respond(function (Response $respons, Throwable $e, Request $request) {
             $status = $respons->getStatusCode();
 
             $render = in_array($status, [403, 404, 419, 503], true)

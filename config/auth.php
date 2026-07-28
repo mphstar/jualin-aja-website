@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\PosUser;
 use App\Models\User;
 
 return [
@@ -42,6 +43,26 @@ return [
             'driver' => 'session',
             'provider' => 'users',
         ],
+
+        /*
+         * Sanctum mendaftarkan guard ini sendiri dengan provider `null`, dan
+         * provider null berarti TOKEN APA PUN diterima — termasuk token
+         * aplikasi POS mobile. Ditulis eksplisit di sini supaya `/api/v1/*`
+         * milik panel admin hanya bisa disentuh admin.
+         */
+        'sanctum' => [
+            'driver' => 'sanctum',
+            'provider' => 'users',
+        ],
+
+        /*
+         * Aplikasi POS mobile. Provider terpisah, jadi token admin tidak bisa
+         * dipakai untuk membuka kasir toko mana pun.
+         */
+        'pos' => [
+            'driver' => 'sanctum',
+            'provider' => 'pos_users',
+        ],
     ],
 
     /*
@@ -67,10 +88,10 @@ return [
             'model' => env('AUTH_MODEL', User::class),
         ],
 
-        // 'users' => [
-        //     'driver' => 'database',
-        //     'table' => 'users',
-        // ],
+        'pos_users' => [
+            'driver' => 'eloquent',
+            'model' => PosUser::class,
+        ],
     ],
 
     /*

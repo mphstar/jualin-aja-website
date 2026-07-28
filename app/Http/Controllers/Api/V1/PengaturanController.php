@@ -12,29 +12,22 @@ use App\Http\Requests\SimpanHargaPaketRequest;
 use App\Models\Pengaturan;
 use App\Services\PencatatAktivitas;
 use App\Support\Format;
+use App\Support\HargaPaket;
 
 class PengaturanController extends Controller
 {
-    /** Harga contoh awal (PRD §4.1) — hanya dipakai bila belum pernah diubah. */
-    private const array HARGA_BAWAAN = [
-        'TRIAL' => 0,
-        'BULANAN' => 99_000,
-        'SEMESTERAN' => 499_000,
-        'TAHUNAN' => 899_000,
-    ];
-
     public function __construct(private readonly PencatatAktivitas $pencatat) {}
 
     /** @return array<string, int> */
     public function hargaPaket(): array
     {
-        return $this->hargaTersimpan();
+        return HargaPaket::semua();
     }
 
     /** @return array<string, int> */
     public function simpanHargaPaket(SimpanHargaPaketRequest $request): array
     {
-        $sebelumnya = $this->hargaTersimpan();
+        $sebelumnya = HargaPaket::semua();
         $baru = $request->hargaPaket();
 
         Pengaturan::simpan(Pengaturan::KUNCI_HARGA_PAKET, $baru);
@@ -63,14 +56,5 @@ class PengaturanController extends Controller
         }
 
         return $baru;
-    }
-
-    /** @return array<string, int> */
-    private function hargaTersimpan(): array
-    {
-        /** @var array<string, int> $harga */
-        $harga = Pengaturan::ambil(Pengaturan::KUNCI_HARGA_PAKET, self::HARGA_BAWAAN);
-
-        return [...self::HARGA_BAWAAN, ...$harga];
     }
 }

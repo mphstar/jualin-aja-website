@@ -18,11 +18,32 @@ export interface ParamsPengguna extends ParamsHalaman {
     jenisUsaha?: JenisUsaha | 'SEMUA';
 }
 
+/**
+ * Seberapa hidup kasir sebuah toko.
+ *
+ * Dibedakan dari status langganan dengan sengaja: `aktif` di sini berarti
+ * kasirnya benar-benar dipakai 30 hari terakhir, bukan langganannya masih
+ * berjalan. Toko yang membayar tahunan lalu tidak pernah membuka aplikasinya
+ * adalah toko yang tidak akan memperpanjang.
+ */
+export interface RingkasanPos {
+    kategori: number;
+    produk: number;
+    produkHabis: number;
+    transaksi30Hari: number;
+    omzet30Hari: number;
+    piutangJumlah: number;
+    piutangTotal: number;
+    transaksiTerakhir: string | null;
+    aktif: boolean;
+}
+
 export interface DetailPengguna {
     user: PosUserRingkas;
     riwayatLangganan: Langganan[];
     riwayatPembayaran: Pembayaran[];
     riwayatUnduhan: UnduhanRingkas[];
+    ringkasanPos: RingkasanPos;
 }
 
 export function ambilDaftarPengguna(

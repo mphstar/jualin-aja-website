@@ -4,31 +4,39 @@ declare(strict_types=1);
 
 namespace App\Contracts;
 
+use App\Enums\SaluranBayar;
 use App\Models\Pembayaran;
+use App\Support\HasilCharge;
 
 /**
- * Kontrak gerbang pembayaran — BELUM ADA IMPLEMENTASINYA.
+ * Kontrak gerbang pembayaran langganan.
  *
- * Ditulis lebih dulu supaya bentuk data yang dibutuhkan Midtrans sudah
- * tercermin di skema `pembayaran` (midtrans_order_id, snap_token,
- * midtrans_payload) sejak sekarang, bukan lewat migrasi menyusul pada tabel
- * yang sudah berisi data.
+ * Ada sebagai antarmuka, bukan kelas tunggal, karena dua alasan yang keduanya
+ * praktis: uji fitur memasang gerbang tiruan tanpa menyentuh jaringan, dan
+ * pindah gerbang nanti (Xendit, misalnya) tidak menyentuh satu pun Action.
  *
- * Saat Midtrans dipasang nanti:
- *   1. `composer require midtrans/midtrans-php`
- *   2. Buat App\Services\MidtransGerbang yang mengimplementasi antarmuka ini
- *      dan mengikat kredensial dari `config('services.midtrans')`.
- *   3. Endpoint webhook memverifikasi signature, lalu memanggil
- *      App\Actions\TandaiPembayaranLunas — satu-satunya jalur pelunasan,
- *      jadi perpanjangan langganan dan pencatatan log ikut otomatis.
+ * Implementasi bawaannya App\Services\MidtransGerbang.
  */
 interface GerbangPembayaran
 {
     /**
-     * Terbitkan token Snap untuk sebuah invoice dan simpan jejaknya
-     * (`snap_token`, `midtrans_order_id`) pada baris pembayaran.
+     * Buat transaksi di gerbang untuk sebuah invoice.
+     *
+     * Yang dikembalikan adalah instruksi pembayaran — nomor VA, URL kode QR,
+     * atau deeplink e-wallet — yang langsung ditampilkan aplikasi mobile.
      */
-    public function terbitkanTokenPembayaran(Pembayaran $pembayaran): string;
+    public function buatTransaksi(Pembayaran $pembayaran, SaluranBayar $saluran): HasilCharge;
+
+    /**
+     * Tanya status sebuah invoice ke gerbang.
+     *
+     * Dipakai tombol "Saya sudah bayar". Ia BUKAN jalur utama pelunasan —
+     * yang utama adalah webhook — melainkan jaring pengaman untuk pengguna
+     * yang sudah membayar tapi notifikasinya belum sampai.
+     *
+     * @return array<string, mixed> payload mentah dari gerbang
+     */
+    public function periksaStatus(Pembayaran $pembayaran): array;
 
     /**
      * Pastikan notifikasi berasal dari gerbang, bukan dari pengirim lain.

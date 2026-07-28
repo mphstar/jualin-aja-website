@@ -2,6 +2,16 @@
 
 declare(strict_types=1);
 
+use App\Http\Controllers\Api\MidtransController;
+use App\Http\Controllers\Api\Mobile\AuthController as PosAuthController;
+use App\Http\Controllers\Api\Mobile\BerandaController;
+use App\Http\Controllers\Api\Mobile\EbookController as PosEbookController;
+use App\Http\Controllers\Api\Mobile\KategoriController as PosKategoriController;
+use App\Http\Controllers\Api\Mobile\LanggananController as PosLanggananController;
+use App\Http\Controllers\Api\Mobile\LaporanController;
+use App\Http\Controllers\Api\Mobile\ProdukController as PosProdukController;
+use App\Http\Controllers\Api\Mobile\TokoController as PosTokoController;
+use App\Http\Controllers\Api\Mobile\TransaksiController as PosTransaksiController;
 use App\Http\Controllers\Api\V1\AktivitasController;
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\EbookController;
@@ -79,3 +89,96 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
         Route::put('pengaturan/harga-paket', [PengaturanController::class, 'simpanHargaPaket'])->name('pengaturan.harga.simpan');
     });
 });
+
+/*
+|--------------------------------------------------------------------------
+| API aplikasi POS mobile
+|--------------------------------------------------------------------------
+|
+| Terpisah dari `v1` di atas — bukan sekadar kerapian. Keduanya memakai guard
+| yang berbeda dengan provider yang berbeda (`pos_users` vs `users`), jadi
+| token yang salah tempat ditolak oleh Sanctum sendiri, bukan oleh pemeriksaan
+| yang harus diingat di tiap controller.
+|
+| Autentikasinya token bearer: perangkatnya lain, jaringannya lain, dan ia
+| harus tetap masuk berminggu-minggu tanpa membuka peramban.
+|
+*/
+
+Route::prefix('mobile/v1')->name('api.mobile.')->group(function (): void {
+    Route::post('auth/masuk', [PosAuthController::class, 'masuk'])
+        ->middleware('throttle:10,1')
+        ->name('auth.masuk');
+
+    Route::middleware(['auth:pos', 'pos'])->group(function (): void {
+        Route::post('auth/keluar', [PosAuthController::class, 'keluar'])->name('auth.keluar');
+        Route::get('auth/saya', [PosAuthController::class, 'saya'])->name('auth.saya');
+        Route::patch('auth/profil', [PosAuthController::class, 'ubahProfil'])->name('auth.profil');
+
+        /*
+         * Langganan & tagihan sengaja DI LUAR `langganan.berjalan`. Toko yang
+         * langganannya habis justru paling butuh halaman ini — mengunci pintu
+         * keluarnya sendiri membuat perpanjangan hanya bisa lewat dukungan.
+         */
+        Route::get('langganan', [PosLanggananController::class, 'show'])->name('langganan');
+        Route::get('tagihan', [PosLanggananController::class, 'riwayatTagihan'])->name('tagihan.index');
+        Route::post('tagihan', [PosLanggananController::class, 'buatTagihan'])
+            ->middleware('throttle:12,1')
+            ->name('tagihan.store');
+        Route::get('tagihan/{pembayaran}', [PosLanggananController::class, 'tagihan'])->name('tagihan.show');
+        Route::post('tagihan/{pembayaran}/periksa', [PosLanggananController::class, 'periksaTagihan'])
+            ->middleware('throttle:20,1')
+            ->name('tagihan.periksa');
+
+        Route::get('resep', [PosEbookController::class, 'index'])->name('resep.index');
+        Route::post('resep/{ebook}/unduh', [PosEbookController::class, 'unduh'])->name('resep.unduh');
+
+        /*
+         * Sisanya butuh langganan yang masih berjalan. Middleware-nya hanya
+         * menahan penulisan — membaca tetap terbuka, karena kasir yang tidak
+         * bisa melihat daftar produknya sendiri akan mengira datanya hilang.
+         */
+        Route::middleware('langganan.berjalan')->group(function (): void {
+            Route::get('beranda', BerandaController::class)->name('beranda');
+            Route::get('laporan', LaporanController::class)->name('laporan');
+
+            Route::get('kategori', [PosKategoriController::class, 'index'])->name('kategori.index');
+            Route::post('kategori', [PosKategoriController::class, 'store'])->name('kategori.store');
+            // Sebelum `{kategori}`, kalau tidak "urutan" tertangkap sebagai id.
+            Route::put('kategori/urutan', [PosKategoriController::class, 'urutkan'])->name('kategori.urutan');
+            Route::patch('kategori/{kategori}', [PosKategoriController::class, 'update'])->name('kategori.update');
+            Route::delete('kategori/{kategori}', [PosKategoriController::class, 'destroy'])->name('kategori.destroy');
+
+            Route::get('produk', [PosProdukController::class, 'index'])->name('produk.index');
+            Route::post('produk', [PosProdukController::class, 'store'])->name('produk.store');
+            Route::patch('produk/{produk}', [PosProdukController::class, 'update'])->name('produk.update');
+
+            Route::get('transaksi/piutang', [PosTransaksiController::class, 'piutang'])->name('transaksi.piutang');
+            Route::get('transaksi/nomor-berikutnya', [PosTransaksiController::class, 'nomorBerikutnya'])->name('transaksi.nomor');
+            Route::get('transaksi', [PosTransaksiController::class, 'index'])->name('transaksi.index');
+            Route::post('transaksi', [PosTransaksiController::class, 'store'])->name('transaksi.store');
+            Route::get('transaksi/{transaksi}', [PosTransaksiController::class, 'show'])->name('transaksi.show');
+            Route::post('transaksi/{transaksi}/lunasi', [PosTransaksiController::class, 'lunasi'])->name('transaksi.lunasi');
+            Route::put('transaksi/{transaksi}/isi', [PosTransaksiController::class, 'ubahIsi'])->name('transaksi.isi');
+
+            Route::get('toko', [PosTokoController::class, 'show'])->name('toko.show');
+            Route::put('toko', [PosTokoController::class, 'update'])->name('toko.update');
+            Route::get('toko/struk', [PosTokoController::class, 'struk'])->name('toko.struk');
+            Route::put('toko/struk', [PosTokoController::class, 'simpanStruk'])->name('toko.struk.simpan');
+        });
+    });
+});
+
+/*
+|--------------------------------------------------------------------------
+| Webhook gerbang pembayaran
+|--------------------------------------------------------------------------
+|
+| Tanpa autentikasi — Midtrans menembaknya dari servernya sendiri. Yang
+| membedakannya dari pengirim lain adalah `signature_key` di dalam badan
+| permintaan, diverifikasi di dalam controller.
+|
+*/
+
+Route::post('midtrans/notifikasi', [MidtransController::class, 'notifikasi'])
+    ->name('api.midtrans.notifikasi');

@@ -14,6 +14,7 @@ use App\Models\PosUser;
 use App\Services\PencatatAktivitas;
 use App\Support\Format;
 use App\Support\KondisiLangganan;
+use App\Support\NamaAktor;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
@@ -57,7 +58,7 @@ final readonly class PerpanjangLangganan
                 'sumber' => $sumber,
                 'tanggal_mulai' => $mulaiBaru,
                 'tanggal_berakhir' => $akhirBaru,
-                'dibuat_oleh' => Auth::user()?->name,
+                'dibuat_oleh' => NamaAktor::dari(Auth::user()),
                 'catatan' => $catatan,
             ]);
 

@@ -15,8 +15,14 @@ final readonly class TandaiPembayaranGagal
 {
     public function __construct(private PencatatAktivitas $pencatat) {}
 
-    public function __invoke(Pembayaran $pembayaran): Pembayaran
-    {
+    /**
+     * @param  StatusPembayaran  $status  Gagal (ditolak) atau Kedaluwarsa
+     *                                    (batas waktunya lewat tanpa dibayar).
+     */
+    public function __invoke(
+        Pembayaran $pembayaran,
+        StatusPembayaran $status = StatusPembayaran::Gagal,
+    ): Pembayaran {
         if ($pembayaran->status === StatusPembayaran::Lunas) {
             // Membatalkan invoice yang sudah lunas berarti langganannya juga
             // harus ditarik kembali. Selama alur itu belum ada, jalan ini ditutup
@@ -24,12 +30,20 @@ final readonly class TandaiPembayaranGagal
             throw new KesalahanDomain('Invoice yang sudah lunas tidak bisa ditandai gagal.');
         }
 
-        $pembayaran->update(['status' => StatusPembayaran::Gagal]);
+        if ($status !== StatusPembayaran::Gagal && $status !== StatusPembayaran::Kedaluwarsa) {
+            throw new KesalahanDomain('Status akhir yang diminta tidak dikenali.');
+        }
+
+        $pembayaran->update(['status' => $status]);
 
         $this->pencatat->catat(
             aksi: JenisAksi::PembayaranGagal,
             targetTipe: TargetAksi::Pembayaran,
-            deskripsi: sprintf('Menandai invoice %s sebagai gagal.', $pembayaran->nomor_invoice),
+            deskripsi: sprintf(
+                'Menandai invoice %s sebagai %s.',
+                $pembayaran->nomor_invoice,
+                mb_strtolower($status->label()),
+            ),
             targetId: (string) $pembayaran->id,
             targetLabel: $pembayaran->nomor_invoice,
         );

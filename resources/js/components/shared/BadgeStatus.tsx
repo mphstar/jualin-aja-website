@@ -75,6 +75,8 @@ const NADA_PEMBAYARAN: Record<StatusPembayaran, Nada> = {
     LUNAS: 'sukses',
     MENUNGGU: 'peringatan',
     GAGAL: 'bahaya',
+    // Batas waktunya lewat tanpa dibayar — bukan kegagalan, cuma tidak jadi.
+    KEDALUWARSA: 'netral',
     REFUND: 'netral',
 };
 

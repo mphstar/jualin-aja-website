@@ -2,6 +2,8 @@
 
 namespace App\Providers;
 
+use App\Contracts\GerbangPembayaran;
+use App\Services\MidtransGerbang;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -17,7 +19,16 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        /*
+         * Gerbang pembayaran diikat sebagai singleton lewat antarmukanya, jadi
+         * uji fitur bisa menukarnya dengan tiruan tanpa satu pun Action tahu —
+         * dan tidak ada satu pun tes yang menembak jaringan Midtrans.
+         */
+        $this->app->singleton(GerbangPembayaran::class, fn (): MidtransGerbang => new MidtransGerbang(
+            serverKey: config('services.midtrans.server_key'),
+            produksi: (bool) config('services.midtrans.is_production'),
+            timeout: (int) config('services.midtrans.timeout', 15),
+        ));
     }
 
     /**

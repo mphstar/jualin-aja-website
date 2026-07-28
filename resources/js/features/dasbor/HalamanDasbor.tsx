@@ -70,12 +70,18 @@ export function HalamanDasbor() {
                     keterangan="vs sebelum bulan ini"
                     memuat={memuat}
                 />
+                {/*
+                    Yang MEMBAYAR di angka utama, yang MEMAKAI di keterangannya.
+                    Selisih keduanya adalah daftar toko yang akan pergi saat
+                    langganannya habis — dan ia cuma terlihat kalau kedua
+                    angkanya berdampingan.
+                */}
                 <StatCard
                     judul="Langganan aktif"
                     nilai={formatAngka(statistik.langgananAktif)}
                     ikon={CircleCheckIcon}
                     delta={statistik.deltaAktifPersen}
-                    keterangan="termasuk uji coba"
+                    keterangan={`${formatAngka(statistik.tokoMemakaiKasir)} memakai kasir 30 hari`}
                     memuat={memuat}
                 />
                 <StatCard

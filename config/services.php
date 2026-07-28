@@ -36,14 +36,17 @@ return [
     ],
 
     /*
-     * Gerbang pembayaran. Belum dipakai — pembayaran saat ini ditandai lunas
-     * manual oleh admin. Kunci di sini menyiapkan jalur untuk fase berikutnya;
-     * lihat App\Contracts\GerbangPembayaran.
+     * Gerbang pembayaran langganan (App\Services\MidtransGerbang).
+     *
+     * `server_key` kosong berarti pembayaran otomatis mati: tagihan tetap bisa
+     * dilihat, tapi pembuatannya menjawab 503 dengan pesan yang menyarankan
+     * perpanjangan manual — bukan galat mentah di layar pemilik toko.
      */
     'midtrans' => [
         'server_key' => env('MIDTRANS_SERVER_KEY'),
         'client_key' => env('MIDTRANS_CLIENT_KEY'),
         'is_production' => (bool) env('MIDTRANS_IS_PRODUCTION', false),
+        'timeout' => (int) env('MIDTRANS_TIMEOUT', 15),
     ],
 
 ];

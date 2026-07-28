@@ -13,6 +13,7 @@ use App\Models\PosUser;
 use App\Models\User;
 use Database\Seeders\DatabaseSeeder;
 use Database\Seeders\PenggunaLanggananSeeder;
+use Database\Seeders\PosSeeder;
 use Illuminate\Support\Facades\Hash;
 
 /*
@@ -31,7 +32,14 @@ it('membuat admin yang bisa dipakai masuk', function (): void {
 });
 
 it('menghasilkan sebaran status persis seperti yang dijanjikan', function (): void {
-    $terhitung = PosUser::query()->get()
+    $terhitung = PosUser::query()
+        // Toko demo aplikasi POS dikecualikan: ia dibuat PosSeeder dengan
+        // langganan yang sengaja dipastikan aktif supaya aplikasi mobile bisa
+        // masuk begitu `migrate --seed` selesai. Ia bukan bagian dari sebaran
+        // PRD §9.6, dan menghitungnya di sini membuat angka aktif selalu
+        // meleset satu tanpa ada yang salah.
+        ->where('email', '!=', PosSeeder::EMAIL_DEMO)
+        ->get()
         ->countBy(fn (PosUser $u): string => $u->status()->value)
         ->all();
 
@@ -40,7 +48,18 @@ it('menghasilkan sebaran status persis seperti yang dijanjikan', function (): vo
     ksort($diharapkan);
 
     expect($terhitung)->toBe($diharapkan)
-        ->and(PosUser::query()->count())->toBe(array_sum($diharapkan));
+        ->and(PosUser::query()->count())->toBe(array_sum($diharapkan) + 1);
+});
+
+it('menyiapkan toko demo yang bisa dipakai masuk dari aplikasi POS', function (): void {
+    $demo = PosUser::query()->where('email', PosSeeder::EMAIL_DEMO)->sole();
+
+    expect(Hash::check(PosSeeder::SANDI_DEMO, (string) $demo->password))->toBeTrue()
+        ->and($demo->langgananBerjalan())->toBeTrue()
+        // Kasirnya harus berisi: aplikasi yang dibuka pertama kali dengan
+        // katalog kosong tidak memperlihatkan apa pun yang bisa ditinjau.
+        ->and($demo->produk()->count())->toBeGreaterThan(0)
+        ->and($demo->transaksi()->count())->toBeGreaterThan(0);
 });
 
 it('tidak menghasilkan tanggal daftar di masa depan', function (): void {

@@ -45,6 +45,19 @@ class StatistikController extends Controller
                 $this->pendapatan($awalBulanIni, null),
                 $this->pendapatan($awalBulanLalu, $awalBulanIni),
             ),
+            /*
+             * Berapa toko yang kasirnya benar-benar dipakai 30 hari terakhir.
+             *
+             * Angka yang paling penting di halaman ini dan paling mudah
+             * terlewat: langganan aktif menghitung yang MEMBAYAR, ini
+             * menghitung yang MEMAKAI. Selisih di antara keduanya adalah
+             * daftar toko yang akan pergi saat langganannya habis, dan ia
+             * hanya terlihat kalau kedua angkanya berdampingan.
+             */
+            'tokoMemakaiKasir' => PosUser::query()
+                ->whereHas('transaksi', fn (EloquentBuilder $q) => $q
+                    ->where('transaksi.waktu', '>=', $sekarang->subDays(30)))
+                ->count(),
         ];
     }
 

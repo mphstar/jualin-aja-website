@@ -75,6 +75,7 @@ export const LABEL_STATUS_PEMBAYARAN: Record<StatusPembayaran, string> = {
     LUNAS: 'Lunas',
     MENUNGGU: 'Menunggu',
     GAGAL: 'Gagal',
+    KEDALUWARSA: 'Kedaluwarsa',
     REFUND: 'Refund',
 };
 
@@ -82,6 +83,7 @@ export const LABEL_METODE_PEMBAYARAN: Record<MetodePembayaran, string> = {
     TRANSFER_BANK: 'Transfer Bank',
     QRIS: 'QRIS',
     VIRTUAL_ACCOUNT: 'Virtual Account',
+    EWALLET: 'E-Wallet',
     MANUAL: 'Manual / Tunai',
 };
 

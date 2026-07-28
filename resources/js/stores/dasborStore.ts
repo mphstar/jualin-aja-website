@@ -17,6 +17,7 @@ const STATISTIK_KOSONG: StatistikDasbor = {
     kedaluwarsa: 0,
     pendapatanBulanIni: 0,
     deltaPendapatanPersen: 0,
+    tokoMemakaiKasir: 0,
 };
 
 interface DasborState {
