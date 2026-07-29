@@ -1,0 +1,80 @@
+name: jualinaja-website
+
+services:
+  # ============================================================================
+  # Aplikasi Web Laravel + React (Nginx + PHP-FPM)
+  # ============================================================================
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        PHP_VERSION: "8.4"
+    container_name: jualinaja_app
+    restart: unless-stopped
+    ports:
+      - "${WEB_PORT:-8888}:80"
+    env_file:
+      - .env.docker
+    environment:
+      DB_HOST: db
+      DB_PORT: 3306
+    volumes:
+      - ./storage/app:/var/www/html/storage/app
+      - ./storage/logs:/var/www/html/storage/logs
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - jualinaja_network
+
+  # ============================================================================
+  # Basis Data MySQL 8.0
+  # ============================================================================
+  db:
+    image: mysql:8.0
+    container_name: jualinaja_db
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: ${DB_DATABASE:-jualinaja}
+      MYSQL_USER: ${DB_USERNAME:-jualinuser}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-secretpassword}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-rootsecret}
+    ports:
+      - "3306:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${DB_ROOT_PASSWORD:-rootsecret}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - jualinaja_network
+
+  # ============================================================================
+  # phpMyAdmin (Web GUI Pengelola Database MySQL)
+  # ============================================================================
+  phpmyadmin:
+    image: phpmyadmin:latest
+    container_name: jualinaja_phpmyadmin
+    restart: unless-stopped
+    ports:
+      - "${PHPMYADMIN_PORT:-8880}:80"
+    environment:
+      PMA_HOST: db
+      PMA_PORT: 3306
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-rootsecret}
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - jualinaja_network
+
+networks:
+  jualinaja_network:
+    driver: bridge
+
+volumes:
+  db_data:
+    driver: local
