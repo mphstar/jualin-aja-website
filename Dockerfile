@@ -3,31 +3,20 @@ FROM php:${PHP_VERSION}-fpm-alpine
 
 WORKDIR /var/www/html
 
-# Install system dependencies, Node.js 20, Nginx, Supervisor & PHP extensions
+# Install system dependencies, Node.js 20, Nginx & Supervisor
 RUN apk add --no-cache \
     nodejs \
     npm \
     nginx \
     supervisor \
     netcat-openbsd \
-    libpng-dev \
-    libjpeg-turbo-dev \
-    freetype-dev \
-    libzip-dev \
-    icu-dev \
-    oniguruma-dev \
     zip \
     unzip \
-    curl \
-    && docker-php-ext-configure gd --with-freetype --with-jpeg \
-    && docker-php-ext-install -j$(nproc) \
-        pdo_mysql \
-        gd \
-        zip \
-        bcmath \
-        opcache \
-        intl \
-        mbstring
+    curl
+
+# Install pre-compiled PHP extensions secara cepat (bebas kompilasi C lama)
+ADD --chmod=0755 https://github.com/mlocati/docker-php-extension-installer/releases/latest/download/install-php-extensions /usr/local/bin/
+RUN install-php-extensions pdo_mysql gd zip bcmath opcache intl mbstring
 
 # Install Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
