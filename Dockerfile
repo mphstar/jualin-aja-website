@@ -6,6 +6,20 @@ ARG PHP_VERSION=8.4
 FROM node:20-alpine AS frontend-builder
 WORKDIR /app
 
+# Install PHP CLI untuk plugin Vite (@laravel/vite-plugin-wayfinder)
+RUN apk add --no-cache \
+    php83 \
+    php83-phar \
+    php83-mbstring \
+    php83-openssl \
+    php83-json \
+    php83-curl \
+    php83-dom \
+    php83-xml \
+    php83-tokenizer \
+    php83-fileinfo \
+    && ln -sf /usr/bin/php83 /usr/bin/php
+
 COPY package*.json ./
 RUN npm ci
 
