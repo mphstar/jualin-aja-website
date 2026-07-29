@@ -28,13 +28,12 @@ services:
       - jualinaja_network
 
   # ============================================================================
-  # Basis Data MySQL 8.0
+  # Basis Data MariaDB (Kompatibel 100% MySQL, Hemat RAM & Bebas CPU Issue)
   # ============================================================================
   db:
-    image: mysql:8.0
+    image: mariadb:10.11
     container_name: jualinaja_db
     restart: unless-stopped
-    command: --default-authentication-plugin=mysql_native_password --innodb-buffer-pool-size=128M --max-connections=50
     environment:
       MYSQL_DATABASE: ${DB_DATABASE:-jualinaja}
       MYSQL_USER: ${DB_USERNAME:-jualinuser}
