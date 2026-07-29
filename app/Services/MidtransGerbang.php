@@ -52,29 +52,31 @@ final readonly class MidtransGerbang implements GerbangPembayaran
 
         $batasBayar = CarbonImmutable::now()->addHours(self::JAM_KEDALUWARSA);
 
+        $rincianPelanggan = array_filter([
+            'first_name' => $toko?->nama !== null && trim($toko->nama) !== '' ? mb_substr(trim($toko->nama), 0, 50) : null,
+            'email' => filter_var($toko?->email ?? '', FILTER_VALIDATE_EMAIL) ? trim($toko->email) : null,
+            'phone' => $toko?->telepon !== null && trim($toko->telepon) !== '' ? trim($toko->telepon) : null,
+        ], fn ($val) => $val !== null && $val !== '');
+
         $badan = [
             'payment_type' => $saluran->tipePembayaranMidtrans(),
             'transaction_details' => [
-                'order_id' => $pembayaran->midtrans_order_id ?? $pembayaran->nomor_invoice,
+                'order_id' => str_replace('/', '-', $pembayaran->midtrans_order_id ?? $pembayaran->nomor_invoice),
                 // Midtrans menuntut bilangan bulat rupiah. Seluruh nominal di
                 // domain ini memang tidak pernah punya pecahan.
-                'gross_amount' => $pembayaran->nominal,
+                'gross_amount' => (int) $pembayaran->nominal,
             ],
             'item_details' => [[
                 'id' => $pembayaran->durasi->value,
-                'price' => $pembayaran->nominal,
+                'price' => (int) $pembayaran->nominal,
                 'quantity' => 1,
-                'name' => 'Langganan Jualin Aja '.$pembayaran->durasi->label(),
+                'name' => mb_substr('Langganan Jualin Aja '.$pembayaran->durasi->label(), 0, 50),
             ]],
-            'customer_details' => [
-                'first_name' => $toko->nama,
-                'email' => $toko->email,
-                'phone' => $toko->telepon,
-            ],
             'custom_expiry' => [
                 'expiry_duration' => self::JAM_KEDALUWARSA,
                 'unit' => 'hour',
             ],
+            ...($rincianPelanggan !== [] ? ['customer_details' => $rincianPelanggan] : []),
             ...$this->rincianSaluran($saluran, $pembayaran),
         ];
 
@@ -92,9 +94,13 @@ final readonly class MidtransGerbang implements GerbangPembayaran
         $kode = (string) ($jawaban['status_code'] ?? '');
 
         if (! in_array($kode, ['200', '201'], true)) {
-            throw new KesalahanDomain(
-                'Gagal membuat tagihan: '.($jawaban['status_message'] ?? 'gerbang pembayaran menolak.'),
-            );
+            $pesan = $jawaban['status_message'] ?? 'gerbang pembayaran menolak.';
+
+            if (! empty($jawaban['validation_messages']) && is_array($jawaban['validation_messages'])) {
+                $pesan .= ' ('.implode(', ', $jawaban['validation_messages']).')';
+            }
+
+            throw new KesalahanDomain('Gagal membuat tagihan: '.$pesan);
         }
 
         return new HasilCharge(
@@ -108,14 +114,16 @@ final readonly class MidtransGerbang implements GerbangPembayaran
             kodePerusahaan: $saluran === SaluranBayar::VaMandiri
                 ? ($jawaban['biller_code'] ?? null)
                 : null,
-            qrUrl: $this->aksi($jawaban, 'generate-qr-code'),
+            qrUrl: isset($jawaban['qr_string']) && (string) $jawaban['qr_string'] !== ''
+                ? 'https://api.qrserver.com/v1/create-qr-code/?size=300x300&data='.rawurlencode((string) $jawaban['qr_string'])
+                : $this->aksi($jawaban, 'generate-qr-code-v2', 'generate-qr-code'),
             tautanBayar: $this->aksi($jawaban, 'deeplink-redirect'),
         );
     }
 
     public function periksaStatus(Pembayaran $pembayaran): array
     {
-        $orderId = $pembayaran->midtrans_order_id ?? $pembayaran->nomor_invoice;
+        $orderId = str_replace('/', '-', $pembayaran->midtrans_order_id ?? $pembayaran->nomor_invoice);
 
         return $this->kirim(fn (PendingRequest $http): Response => $http->get(
             sprintf('%s/v2/%s/status', $this->basisApi(), rawurlencode($orderId)),
@@ -163,9 +171,9 @@ final readonly class MidtransGerbang implements GerbangPembayaran
             SaluranBayar::VaBca => ['bank_transfer' => ['bank' => 'bca']],
             SaluranBayar::VaMandiri => ['echannel' => [
                 'bill_info1' => 'Langganan',
-                'bill_info2' => $pembayaran->nomor_invoice,
+                'bill_info2' => mb_substr($pembayaran->nomor_invoice, 0, 30),
             ]],
-            SaluranBayar::Gopay => ['gopay' => ['enable_callback' => false]],
+            SaluranBayar::Gopay => [],
         };
     }
 
@@ -188,10 +196,10 @@ final readonly class MidtransGerbang implements GerbangPembayaran
      *
      * @param  array<string, mixed>  $jawaban
      */
-    private function aksi(array $jawaban, string $nama): ?string
+    private function aksi(array $jawaban, string ...$namaDaftar): ?string
     {
         foreach ((array) ($jawaban['actions'] ?? []) as $aksi) {
-            if (is_array($aksi) && ($aksi['name'] ?? null) === $nama) {
+            if (is_array($aksi) && in_array($aksi['name'] ?? null, $namaDaftar, true)) {
                 return (string) $aksi['url'];
             }
         }

@@ -67,7 +67,29 @@ export function pulihkanPengguna(id: string): Promise<PosUser> {
     return kirim<PosUser>(`/pengguna/${id}/pulihkan`);
 }
 
+export function tambahPengguna(data: DataTambahPengguna): Promise<PosUser> {
+    return kirim<PosUser>('/pengguna', data);
+}
+
 /** Dipakai dasbor: langganan terdekat berakhir. */
 export function ambilAkanBerakhir(batas = 10): Promise<PosUserRingkas[]> {
     return ambil<PosUserRingkas[]>('/pengguna/akan-berakhir', { batas });
+}
+
+export interface DataTambahPengguna {
+    nama: string;
+    email: string;
+    telepon: string;
+    namaToko: string;
+    jenisUsaha: JenisUsaha;
+    kota: string;
+    alamat?: string;
+    password: string;
+    password_confirmation: string;
+    langganan?: {
+        durasi: DurasiPaket;
+        sumber: string;
+        lamaHari: number;
+        catatan?: string;
+    };
 }

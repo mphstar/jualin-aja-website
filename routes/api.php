@@ -10,6 +10,7 @@ use App\Http\Controllers\Api\Mobile\KategoriController as PosKategoriController;
 use App\Http\Controllers\Api\Mobile\LanggananController as PosLanggananController;
 use App\Http\Controllers\Api\Mobile\LaporanController;
 use App\Http\Controllers\Api\Mobile\ProdukController as PosProdukController;
+use App\Http\Controllers\Api\Mobile\ProdukEksporImporController as PosProdukEksporImporController;
 use App\Http\Controllers\Api\Mobile\TokoController as PosTokoController;
 use App\Http\Controllers\Api\Mobile\TransaksiController as PosTransaksiController;
 use App\Http\Controllers\Api\V1\AktivitasController;
@@ -53,6 +54,7 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
          */
         Route::get('pengguna/akan-berakhir', [PenggunaController::class, 'akanBerakhir'])->name('pengguna.akan-berakhir');
         Route::get('pengguna', [PenggunaController::class, 'index'])->name('pengguna.index');
+        Route::post('pengguna', [PenggunaController::class, 'store'])->name('pengguna.store');
         Route::get('pengguna/{pengguna}', [PenggunaController::class, 'show'])->name('pengguna.show');
         Route::post('pengguna/{pengguna}/tangguhkan', [PenggunaController::class, 'tangguhkan'])->name('pengguna.tangguhkan');
         Route::post('pengguna/{pengguna}/pulihkan', [PenggunaController::class, 'pulihkan'])->name('pengguna.pulihkan');
@@ -106,6 +108,10 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
 */
 
 Route::prefix('mobile/v1')->name('api.mobile.')->group(function (): void {
+    Route::post('auth/daftar', [PosAuthController::class, 'daftar'])
+        ->middleware('throttle:5,1')
+        ->name('auth.daftar');
+
     Route::post('auth/masuk', [PosAuthController::class, 'masuk'])
         ->middleware('throttle:10,1')
         ->name('auth.masuk');
@@ -148,6 +154,10 @@ Route::prefix('mobile/v1')->name('api.mobile.')->group(function (): void {
             Route::put('kategori/urutan', [PosKategoriController::class, 'urutkan'])->name('kategori.urutan');
             Route::patch('kategori/{kategori}', [PosKategoriController::class, 'update'])->name('kategori.update');
             Route::delete('kategori/{kategori}', [PosKategoriController::class, 'destroy'])->name('kategori.destroy');
+
+            Route::get('produk/format-impor', [PosProdukEksporImporController::class, 'formatImpor'])->name('produk.format-impor');
+            Route::get('produk/ekspor', [PosProdukEksporImporController::class, 'ekspor'])->name('produk.ekspor');
+            Route::post('produk/impor', [PosProdukEksporImporController::class, 'impor'])->name('produk.impor');
 
             Route::get('produk', [PosProdukController::class, 'index'])->name('produk.index');
             Route::post('produk', [PosProdukController::class, 'store'])->name('produk.store');

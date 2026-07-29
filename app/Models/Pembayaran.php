@@ -97,6 +97,27 @@ class Pembayaran extends Model
             : $this->status;
     }
 
+    public function getQrUrlAttribute(?string $value): ?string
+    {
+        if (is_array($this->midtrans_payload) && ! empty($this->midtrans_payload['qr_string'])) {
+            return 'https://api.qrserver.com/v1/create-qr-code/?size=300x300&data='.rawurlencode((string) $this->midtrans_payload['qr_string']);
+        }
+
+        if (is_array($this->midtrans_payload)) {
+            foreach ((array) ($this->midtrans_payload['actions'] ?? []) as $aksi) {
+                if (is_array($aksi) && in_array($aksi['name'] ?? null, ['generate-qr-code-v2', 'generate-qr-code'], true)) {
+                    return (string) $aksi['url'];
+                }
+            }
+        }
+
+        if ($value !== null && $value !== '') {
+            return $value;
+        }
+
+        return null;
+    }
+
     /** @return BelongsTo<Langganan, $this> */
     public function langganan(): BelongsTo
     {

@@ -20,6 +20,7 @@ enum JenisAksi: string
     case PembayaranLunas = 'PEMBAYARAN_LUNAS';
     case PembayaranGagal = 'PEMBAYARAN_GAGAL';
     case PengaturanUbah = 'PENGATURAN_UBAH';
+    case PenggunaDitambahkan = 'PENGGUNA_DITAMBAHKAN';
 
     public function label(): string
     {
@@ -37,6 +38,7 @@ enum JenisAksi: string
             self::PembayaranLunas => 'Tandai Lunas',
             self::PembayaranGagal => 'Tandai Gagal',
             self::PengaturanUbah => 'Ubah Pengaturan',
+            self::PenggunaDitambahkan => 'Tambah Pengguna',
         };
     }
 }

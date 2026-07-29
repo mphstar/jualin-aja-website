@@ -43,10 +43,10 @@ return new class extends Migration
             $table->string('kode_perusahaan')->nullable()->after('kode_bayar');
 
             /** URL gambar QR dari Midtrans — QRIS dan GoPay. */
-            $table->string('qr_url')->nullable()->after('kode_perusahaan');
+            $table->text('qr_url')->nullable()->after('kode_perusahaan');
 
             /** Deeplink ke aplikasi e-wallet. */
-            $table->string('tautan_bayar')->nullable()->after('qr_url');
+            $table->text('tautan_bayar')->nullable()->after('qr_url');
 
             $table->index(['pos_user_id', 'tanggal']);
         });

@@ -1,5 +1,5 @@
 import { router } from '@inertiajs/react';
-import { SearchIcon, UsersIcon, XIcon } from 'lucide-react';
+import { PlusIcon, SearchIcon, UsersIcon, XIcon } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { DataTable } from '@/components/shared/DataTable';
@@ -18,6 +18,7 @@ import {
 import { DialogPerpanjang } from '@/features/langganan/DialogPerpanjang';
 import type { TargetPerpanjang } from '@/features/langganan/DialogPerpanjang';
 import type { OpsiKolom } from '@/features/pengguna/AksiPengguna';
+import { DialogTambahPengguna } from '@/features/pengguna/DialogTambahPengguna';
 import { DialogTangguhkan } from '@/features/pengguna/DialogTangguhkan';
 import { KartuPengguna } from '@/features/pengguna/KartuPengguna';
 import { buatKolomPengguna } from '@/features/pengguna/kolomPengguna';
@@ -46,10 +47,12 @@ export function HalamanPengguna() {
     const ambilDaftar = usePenggunaStore((s) => s.ambilDaftar);
     const tangguhkan = usePenggunaStore((s) => s.tangguhkan);
     const pulihkan = usePenggunaStore((s) => s.pulihkan);
+    const tambahPengguna = usePenggunaStore((s) => s.tambahPengguna);
 
     const [cari, setCari] = useState(filter.cari ?? '');
     const cariTertunda = useDebounce(cari, 350);
 
+    const [bukaTambah, setBukaTambah] = useState(false);
     const [targetPerpanjang, setTargetPerpanjang] =
         useState<TargetPerpanjang | null>(null);
     const [targetTangguhkan, setTargetTangguhkan] =
@@ -194,6 +197,12 @@ export function HalamanPengguna() {
             <PageHeader
                 judul="Manajemen Pengguna"
                 keterangan="Daftar pemilik toko yang memakai aplikasi POS beserta kondisi langganannya."
+                aksi={
+                    <Button onClick={() => setBukaTambah(true)}>
+                        <PlusIcon className="mr-2 size-4" />
+                        Tambah Pengguna
+                    </Button>
+                }
             />
 
             <DataTable
@@ -216,7 +225,7 @@ export function HalamanPengguna() {
                         keterangan={
                             adaFilter
                                 ? 'Coba longgarkan kata kunci atau filter yang dipakai.'
-                                : 'Pengguna akan muncul di sini setelah mendaftar lewat aplikasi POS.'
+                                : 'Pengguna akan muncul di sini setelah mendaftar lewat aplikasi POS atau ditambahkan admin.'
                         }
                         aksi={
                             adaFilter ? (
@@ -227,6 +236,12 @@ export function HalamanPengguna() {
                         }
                     />
                 }
+            />
+
+            <DialogTambahPengguna
+                buka={bukaTambah}
+                onTutup={() => setBukaTambah(false)}
+                onKirim={tambahPengguna}
             />
 
             <DialogPerpanjang

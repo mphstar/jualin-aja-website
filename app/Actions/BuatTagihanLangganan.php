@@ -74,7 +74,7 @@ final readonly class BuatTagihanLangganan
                     $durasi,
                     $sekarang,
                 ),
-                'midtrans_order_id' => $nomorInvoice.'-'.Str::lower(Str::random(6)),
+                'midtrans_order_id' => str_replace('/', '-', $nomorInvoice).'-'.Str::lower(Str::random(6)),
                 'catatan' => 'Dibuat dari aplikasi POS.',
             ]);
         }, attempts: 3);

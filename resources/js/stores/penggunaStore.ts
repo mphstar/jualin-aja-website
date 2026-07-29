@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { api, KesalahanApi } from '@/lib/api';
-import type { ParamsPengguna } from '@/lib/api';
+import type { DataTambahPengguna, ParamsPengguna } from '@/lib/api';
 import type { PosUserRingkas } from '@/types';
 
 type Filter = Pick<ParamsPengguna, 'cari' | 'status' | 'durasi' | 'jenisUsaha'>;
@@ -23,6 +23,7 @@ interface PenggunaState {
     resetFilter: () => void;
     tangguhkan: (id: string, alasan: string) => Promise<void>;
     pulihkan: (id: string) => Promise<void>;
+    tambahPengguna: (data: DataTambahPengguna) => Promise<void>;
 }
 
 export const usePenggunaStore = create<PenggunaState>()((set, get) => ({
@@ -72,6 +73,11 @@ export const usePenggunaStore = create<PenggunaState>()((set, get) => ({
 
     pulihkan: async (id) => {
         await api.pengguna.pulihkanPengguna(id);
+        await get().ambilDaftar();
+    },
+
+    tambahPengguna: async (data) => {
+        await api.pengguna.tambahPengguna(data);
         await get().ambilDaftar();
     },
 }));

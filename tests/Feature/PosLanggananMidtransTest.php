@@ -348,7 +348,7 @@ it('mengirim charge QRIS ke sandbox dan membaca url kode qr-nya', function (): v
         'api.sandbox.midtrans.com/v2/charge' => Http::response([
             'status_code' => '201',
             'transaction_id' => 'abc-123',
-            'order_id' => 'INV/2026/0001-aaa',
+            'order_id' => 'INV-2026-0001-aaa',
             'transaction_status' => 'pending',
             'actions' => [[
                 'name' => 'generate-qr-code',
@@ -362,7 +362,7 @@ it('mengirim charge QRIS ke sandbox dan membaca url kode qr-nya', function (): v
     $pembayaran = Pembayaran::factory()->create([
         'pos_user_id' => $toko->id,
         'nominal' => 99_000,
-        'midtrans_order_id' => 'INV/2026/0001-aaa',
+        'midtrans_order_id' => 'INV-2026-0001-aaa',
     ]);
 
     $hasil = (new MidtransGerbang(serverKey: 'kunci', produksi: false))
@@ -381,7 +381,7 @@ it('membaca nomor virtual account BCA dari jawaban charge', function (): void {
         'api.sandbox.midtrans.com/v2/charge' => Http::response([
             'status_code' => '201',
             'transaction_id' => 'def-456',
-            'order_id' => 'INV/2026/0002-bbb',
+            'order_id' => 'INV-2026-0002-bbb',
             'va_numbers' => [['bank' => 'bca', 'va_number' => '12345678911']],
         ]),
     ]);
@@ -390,7 +390,7 @@ it('membaca nomor virtual account BCA dari jawaban charge', function (): void {
     $pembayaran = Pembayaran::factory()->create([
         'pos_user_id' => $toko->id,
         'nominal' => 499_000,
-        'midtrans_order_id' => 'INV/2026/0002-bbb',
+        'midtrans_order_id' => 'INV-2026-0002-bbb',
     ]);
 
     $hasil = (new MidtransGerbang(serverKey: 'kunci', produksi: false))
