@@ -9,7 +9,7 @@ services:
       context: .
       dockerfile: Dockerfile
       args:
-        PHP_VERSION: "8.4"
+        PHP_VERSION: "8.5"
     container_name: jualinaja_app
     restart: unless-stopped
     ports:

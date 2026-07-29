@@ -1,40 +1,12 @@
-ARG PHP_VERSION=8.4
-
-# ==============================================================================
-# Stage 1: Build React/Vite Frontend Assets
-# ==============================================================================
-FROM node:20-alpine AS frontend-builder
-WORKDIR /app
-
-# Install PHP CLI untuk plugin Vite (@laravel/vite-plugin-wayfinder)
-RUN apk add --no-cache \
-    php83 \
-    php83-phar \
-    php83-mbstring \
-    php83-openssl \
-    php83-json \
-    php83-curl \
-    php83-dom \
-    php83-xml \
-    php83-tokenizer \
-    php83-fileinfo \
-    && ln -sf /usr/bin/php83 /usr/bin/php
-
-COPY package*.json ./
-RUN npm ci
-
-COPY . .
-RUN npm run build
-
-# ==============================================================================
-# Stage 2: Production PHP Application Container (PHP 8.4 / 8.5)
-# ==============================================================================
+ARG PHP_VERSION=8.5
 FROM php:${PHP_VERSION}-fpm-alpine
 
 WORKDIR /var/www/html
 
-# Install system dependencies & PHP extensions
+# Install system dependencies, Node.js 20, Nginx, Supervisor & PHP extensions
 RUN apk add --no-cache \
+    nodejs \
+    npm \
     nginx \
     supervisor \
     netcat-openbsd \
@@ -60,12 +32,17 @@ RUN apk add --no-cache \
 # Install Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-# Copy application files
+# Copy project files
 COPY . .
-COPY --from=frontend-builder /app/public/build ./public/build
 
-# Install PHP dependencies
+# 1. Install PHP dependencies terlebih dahulu (agar vendor/autoload.php siap)
 RUN composer install --no-dev --optimize-autoloader --no-interaction
+
+# 2. Install Node dependencies & Build Frontend Assets (React/Vite + Wayfinder)
+RUN npm ci && npm run build
+
+# 3. Hapus node_modules setelah build agar ukuran container tetap kecil
+RUN rm -rf node_modules
 
 # Copy Nginx & Supervisor configuration
 COPY docker/nginx.conf /etc/nginx/http.d/default.conf
