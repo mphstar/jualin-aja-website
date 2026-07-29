@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
 
@@ -37,6 +38,10 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->configureDefaults();
+
+        if ($this->app->environment('production') || str_starts_with((string) config('app.url'), 'https://') || request()->server->get('HTTP_X_FORWARDED_PROTO') === 'https') {
+            URL::forceScheme('https');
+        }
     }
 
     /**
