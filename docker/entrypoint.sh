@@ -1,5 +1,4 @@
 #!/bin/sh
-set -e
 
 echo "==> Inisialisasi container Laravel..."
 
@@ -9,38 +8,37 @@ if [ ! -f /var/www/html/.env ]; then
     cp /var/www/html/.env.docker /var/www/html/.env
 fi
 
-# Tunggu basis data MySQL siap
-if [ "$DB_CONNECTION" = "mysql" ]; then
-    echo "==> Menunggu MySQL (${DB_HOST}:${DB_PORT:-3306}) siap..."
-    while ! nc -z "$DB_HOST" "${DB_PORT:-3306}"; do
-        sleep 2
-    done
-    echo "==> MySQL telah siap!"
-fi
+# Tunggu basis data MariaDB/MySQL siap (maksimal 30 detik)
+echo "==> Menunggu database (${DB_HOST:-db}:3306) siap..."
+n=0
+until [ $n -ge 15 ]
+do
+   nc -z "${DB_HOST:-db}" "${DB_PORT:-3306}" >/dev/null 2>&1 && break
+   n=$((n+1))
+   sleep 2
+done
 
 # Buat kunci aplikasi jika belum diset
 if [ -z "$APP_KEY" ] || [ "$APP_KEY" = "base64:" ]; then
     echo "==> Menghasilkan APP_KEY..."
-    php artisan key:generate --force
+    php artisan key:generate --force || true
 fi
 
 # Jalankan migrasi basis data
 echo "==> Menjalankan migrasi basis data..."
-php artisan migrate --force
+php artisan migrate --force || echo "Migrasi akan dicoba ulang saat basis data siap..."
 
 # Buat tautan simbolik storage
 if [ ! -d /var/www/html/public/storage ]; then
     echo "==> Membuat storage:link..."
-    php artisan storage:link --force
+    php artisan storage:link --force || true
 fi
 
-# Optimasi cache Laravel jika di lingkungan produksi
-if [ "$APP_ENV" = "production" ]; then
-    echo "==> Membuat cache konfigurasi & rute..."
-    php artisan config:cache
-    php artisan route:cache
-    php artisan view:cache
-fi
+# Bersihkan cache lama
+echo "==> Membersihkan cache..."
+php artisan config:clear || true
+php artisan route:clear || true
+php artisan view:clear || true
 
 # Atur hak akses direktori storage & cache
 echo "==> Mengatur hak akses folder storage & bootstrap/cache..."
