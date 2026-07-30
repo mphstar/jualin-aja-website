@@ -11,14 +11,6 @@ use Illuminate\Support\Facades\DB;
 
 /**
  * Agregasi omzet — dihitung di basis data, bukan di PHP.
- *
- * Beranda dan Laporan sama-sama membutuhkannya, dan keduanya menjumlahkan hal
- * yang sama: `harga_satuan × jumlah` dari baris transaksi yang berstatus
- * selesai. Menariknya ke memori lalu menjumlahkan di PHP berjalan baik sampai
- * sebuah toko punya sepuluh ribu struk, dan setelah itu tidak pernah baik lagi.
- *
- * Yang dihitung hanya transaksi SELESAI. Piutang tidak masuk omzet — barangnya
- * memang sudah keluar, tapi uangnya belum ada.
  */
 final class OmzetHarian
 {
@@ -48,15 +40,24 @@ final class OmzetHarian
     }
 
     /**
-     * Deret harian, SELENGKAP rentangnya — termasuk hari-hari nol.
+     * Deret agregasi (harian, mingguan, atau bulanan).
      *
-     * Grafik yang melompati hari sepi diam-diam membuat toko terlihat lebih
-     * ramai daripada aslinya, dan garisnya menyambung dua hari yang sebenarnya
-     * berjarak seminggu.
-     *
-     * @return list<array{tanggal: string, omzet: int, transaksi: int}>
+     * @return list<array{tanggal: string, omzet: int, transaksi: int, label?: string}>
      */
-    public static function deret(PosUser $toko, CarbonImmutable $dari, CarbonImmutable $sampai): array
+    public static function deret(PosUser $toko, CarbonImmutable $dari, CarbonImmutable $sampai, string $periode = 'TUJUH_HARI'): array
+    {
+        if ($periode === 'TAHUNAN') {
+            return self::deretTahunan($toko, $dari, $sampai);
+        }
+
+        if ($periode === 'TIGA_PULUH_HARI') {
+            return self::deretBulanan($toko, $dari, $sampai);
+        }
+
+        return self::deretHarian($toko, $dari, $sampai);
+    }
+
+    private static function deretHarian(PosUser $toko, CarbonImmutable $dari, CarbonImmutable $sampai): array
     {
         $terkumpul = DB::table('transaksi')
             ->leftJoin('transaksi_baris', 'transaksi_baris.transaksi_id', '=', 'transaksi.id')
@@ -87,24 +88,63 @@ final class OmzetHarian
         return $deret;
     }
 
-    /**
-     * Pemotong tanggal per mesin basis data.
-     *
-     * SQLite (dipakai uji dan pengembangan) dan MySQL (produksi) tidak punya
-     * fungsi tanggal yang sama, dan `DATE()` MySQL memakai zona waktu server —
-     * sementara nilai yang disimpan sudah dalam zona aplikasi.
-     *
-     * Dikembalikan sebagai ekspresi UTUH, bukan potongan yang disambung di
-     * pemanggil: `selectRaw` hanya menerima literal-string, dan itu memang
-     * pagar yang benar — SQL yang dirakit dari potongan adalah tempat injeksi
-     * masuk.
-     *
-     * @return literal-string
-     */
+    private static function deretBulanan(PosUser $toko, CarbonImmutable $dari, CarbonImmutable $sampai): array
+    {
+        $deret = [];
+        $tglAwal = $dari->startOfDay();
+        $tglAkhir = $sampai->endOfDay();
+
+        $mingguKe = 1;
+        for ($cur = $tglAwal; $cur->lessThanOrEqualTo($tglAkhir); $cur = $cur->addDays(7)) {
+            $chunkEnd = $cur->addDays(6)->endOfDay();
+            if ($chunkEnd->greaterThan($tglAkhir)) {
+                $chunkEnd = $tglAkhir;
+            }
+
+            $ringkas = self::rentang($toko, $cur, $chunkEnd);
+            $deret[] = [
+                'tanggal' => $cur->toISOString(),
+                'omzet' => $ringkas['omzet'],
+                'transaksi' => $ringkas['transaksi'],
+                'label' => "Mgu $mingguKe",
+            ];
+            $mingguKe++;
+        }
+
+        return $deret;
+    }
+
+    private static function deretTahunan(PosUser $toko, CarbonImmutable $dari, CarbonImmutable $sampai): array
+    {
+        $bulanNama = [
+            1 => 'Jan', 2 => 'Feb', 3 => 'Mar', 4 => 'Apr',
+            5 => 'Mei', 6 => 'Jun', 7 => 'Jul', 8 => 'Agu',
+            9 => 'Sep', 10 => 'Okt', 11 => 'Nov', 12 => 'Des',
+        ];
+
+        $deret = [];
+        $tahun = $dari->year;
+
+        for ($m = 1; $m <= 12; $m++) {
+            $start = CarbonImmutable::create($tahun, $m, 1)->startOfDay();
+            $end = $start->endOfMonth()->endOfDay();
+
+            $ringkas = self::rentang($toko, $start, $end);
+            $deret[] = [
+                'tanggal' => $start->toISOString(),
+                'omzet' => $ringkas['omzet'],
+                'transaksi' => $ringkas['transaksi'],
+                'label' => $bulanNama[$m],
+            ];
+        }
+
+        return $deret;
+    }
+
     private static function ekspresiHari(): string
     {
         return DB::connection()->getDriverName() === 'sqlite'
-            ? "strftime('%Y-%m-%d', transaksi.waktu) as hari"
+            ? "STRFTIME('%Y-%m-%d', datetime(transaksi.waktu, 'localtime')) as hari"
             : 'DATE(transaksi.waktu) as hari';
     }
 }

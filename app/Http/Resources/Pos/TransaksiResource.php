@@ -27,6 +27,8 @@ class TransaksiResource extends JsonResource
     {
         return [
             'id' => (string) $this->id,
+            'sesiId' => $this->sesi_kasir_id ? (string) $this->sesi_kasir_id : null,
+            'namaKasir' => $this->nama_kasir,
             'nomorStruk' => $this->nomor_struk,
             'waktu' => $this->waktu->toISOString(),
             'metode' => $this->metode->value,

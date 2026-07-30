@@ -33,6 +33,7 @@ export type {
     ParamsPengguna,
     DetailPengguna,
     RingkasanPos,
+    DataTambahPengguna,
 } from '@/lib/api/pengguna';
 export type { ParamsLangganan } from '@/lib/api/langganan';
 export type { ParamsEbook, MasukanEbook, DetailEbook } from '@/lib/api/ebook';

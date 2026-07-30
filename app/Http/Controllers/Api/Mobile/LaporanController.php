@@ -28,24 +28,55 @@ class LaporanController extends Controller
     public function __invoke(Request $request): array
     {
         $toko = $this->toko($request);
-        $periode = PeriodeLaporan::tryFrom((string) $request->string('periode'))
-            ?? PeriodeLaporan::HariIni;
+        $periodeVal = strtoupper((string) $request->string('periode', 'TUJUH_HARI'));
+        if ($periodeVal === '') {
+            $periodeVal = 'TUJUH_HARI';
+        }
 
-        $sampai = CarbonImmutable::now()->endOfDay();
-        $dari = $sampai->startOfDay()->subDays($periode->hari() - 1);
+        if ($request->filled('dari') && $request->filled('sampai')) {
+            try {
+                $dari = CarbonImmutable::parse((string) $request->string('dari'))->startOfDay();
+                $sampai = CarbonImmutable::parse((string) $request->string('sampai'))->endOfDay();
+            } catch (\Throwable) {
+                $sampai = CarbonImmutable::now()->endOfDay();
+                $dari = $sampai->startOfDay()->subDays(6);
+                $periodeVal = 'TUJUH_HARI';
+            }
+        } else {
+            if ($periodeVal === 'TAHUNAN') {
+                $sampai = CarbonImmutable::now()->endOfDay();
+                $dari = CarbonImmutable::create($sampai->year, 1, 1)->startOfDay();
+            } else if ($periodeVal === 'TIGA_PULUH_HARI') {
+                $sampai = CarbonImmutable::now()->endOfDay();
+                $dari = $sampai->startOfMonth()->startOfDay();
+            } else {
+                $periode = PeriodeLaporan::tryFrom($periodeVal) ?? PeriodeLaporan::TujuhHari;
+                $sampai = CarbonImmutable::now()->endOfDay();
+                $dari = $sampai->startOfDay()->subDays($periode->hari() - 1);
+                $periodeVal = $periode->value;
+            }
+        }
+
+        $periodeLabel = match ($periodeVal) {
+            'HARI_INI' => $dari->translatedFormat('d M Y'),
+            'TUJUH_HARI' => '7 hari',
+            'TIGA_PULUH_HARI' => 'Bulan ' . $dari->translatedFormat('F Y'),
+            'TAHUNAN' => 'Tahun ' . $dari->year,
+            default => $dari->translatedFormat('d M Y') . ' - ' . $sampai->translatedFormat('d M Y'),
+        };
 
         $ringkas = OmzetHarian::rentang($toko, $dari, $sampai);
 
         return [
-            'periode' => $periode->value,
-            'periodeLabel' => $periode->label(),
+            'periode' => $periodeVal,
+            'periodeLabel' => $periodeLabel,
             'dari' => $dari->toISOString(),
             'sampai' => $sampai->toISOString(),
             ...$ringkas,
             'rataPerStruk' => $ringkas['transaksi'] === 0
                 ? 0
                 : intdiv($ringkas['omzet'], $ringkas['transaksi']),
-            'harian' => OmzetHarian::deret($toko, $dari, $sampai),
+            'harian' => OmzetHarian::deret($toko, $dari, $sampai, $periodeVal),
             'terlaris' => $this->terlaris($toko->id, $dari, $sampai),
             'metode' => $this->perMetode($toko->id, $dari, $sampai),
         ];
@@ -94,7 +125,7 @@ class LaporanController extends Controller
      */
     private function perMetode(int $tokoId, CarbonImmutable $dari, CarbonImmutable $sampai): array
     {
-        return array_values(DB::table('transaksi')
+        $rows = DB::table('transaksi')
             ->leftJoin('transaksi_baris', 'transaksi_baris.transaksi_id', '=', 'transaksi.id')
             ->where('transaksi.pos_user_id', $tokoId)
             ->where('transaksi.status', StatusTransaksi::Selesai->value)
@@ -103,14 +134,20 @@ class LaporanController extends Controller
             ->select('transaksi.metode')
             ->selectRaw('COALESCE(SUM(transaksi_baris.harga_satuan * transaksi_baris.jumlah), 0) as omzet')
             ->selectRaw('COUNT(DISTINCT transaksi.id) as transaksi')
-            ->orderByDesc('omzet')
             ->get()
-            ->map(static fn (object $b): array => [
-                'metode' => (string) $b->metode,
-                'metodeLabel' => MetodeBayarPos::from((string) $b->metode)->label(),
-                'omzet' => (int) $b->omzet,
-                'transaksi' => (int) $b->transaksi,
-            ])
-            ->all());
+            ->keyBy('metode');
+
+        $hasil = [];
+        foreach (MetodeBayarPos::cases() as $metodeEnum) {
+            $row = $rows->get($metodeEnum->value);
+            $hasil[] = [
+                'metode' => $metodeEnum->value,
+                'metodeLabel' => $metodeEnum->label(),
+                'omzet' => $row ? (int) $row->omzet : 0,
+                'transaksi' => $row ? (int) $row->transaksi : 0,
+            ];
+        }
+
+        return $hasil;
     }
 }

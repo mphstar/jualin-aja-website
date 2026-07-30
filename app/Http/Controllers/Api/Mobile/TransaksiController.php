@@ -45,6 +45,14 @@ class TransaksiController extends Controller
             $query->where('metode', $metode->value);
         }
 
+        if (($sesiId = trim((string) $request->string('sesi_id'))) !== '') {
+            $query->where('sesi_kasir_id', $sesiId);
+        }
+
+        if (($namaKasir = trim((string) $request->string('nama_kasir'))) !== '') {
+            $query->where('nama_kasir', 'like', '%'.$namaKasir.'%');
+        }
+
         return TransaksiResource::collection(
             $query->orderByDesc('waktu')
                 ->orderByDesc('id')

@@ -22,6 +22,8 @@ use Illuminate\Support\Carbon;
  *
  * @property int $id
  * @property int $pos_user_id
+ * @property int|null $sesi_kasir_id
+ * @property string|null $nama_kasir
  * @property string $nomor_struk
  * @property Carbon $waktu
  * @property MetodeBayarPos $metode
@@ -30,9 +32,10 @@ use Illuminate\Support\Carbon;
  * @property int|null $uang_diterima
  * @property-read Collection<int, BarisTransaksi> $baris
  * @property-read PosUser $posUser
+ * @property-read SesiKasir|null $sesiKasir
  */
 #[Fillable([
-    'pos_user_id', 'nomor_struk', 'waktu', 'metode',
+    'pos_user_id', 'sesi_kasir_id', 'nama_kasir', 'nomor_struk', 'waktu', 'metode',
     'status', 'pelanggan', 'uang_diterima',
 ])]
 class Transaksi extends Model
@@ -57,6 +60,12 @@ class Transaksi extends Model
     public function posUser(): BelongsTo
     {
         return $this->belongsTo(PosUser::class);
+    }
+
+    /** @return BelongsTo<SesiKasir, $this> */
+    public function sesiKasir(): BelongsTo
+    {
+        return $this->belongsTo(SesiKasir::class);
     }
 
     /** @return HasMany<BarisTransaksi, $this> */

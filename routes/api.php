@@ -11,6 +11,7 @@ use App\Http\Controllers\Api\Mobile\LanggananController as PosLanggananControlle
 use App\Http\Controllers\Api\Mobile\LaporanController;
 use App\Http\Controllers\Api\Mobile\ProdukController as PosProdukController;
 use App\Http\Controllers\Api\Mobile\ProdukEksporImporController as PosProdukEksporImporController;
+use App\Http\Controllers\Api\Mobile\SesiKasirController;
 use App\Http\Controllers\Api\Mobile\TokoController as PosTokoController;
 use App\Http\Controllers\Api\Mobile\TransaksiController as PosTransaksiController;
 use App\Http\Controllers\Api\V1\AktivitasController;
@@ -175,6 +176,12 @@ Route::prefix('mobile/v1')->name('api.mobile.')->group(function (): void {
             Route::put('toko', [PosTokoController::class, 'update'])->name('toko.update');
             Route::get('toko/struk', [PosTokoController::class, 'struk'])->name('toko.struk');
             Route::put('toko/struk', [PosTokoController::class, 'simpanStruk'])->name('toko.struk.simpan');
+
+            Route::get('sesi-kasir/aktif', [SesiKasirController::class, 'aktif'])->name('sesi-kasir.aktif');
+            Route::post('sesi-kasir/buka', [SesiKasirController::class, 'buka'])->name('sesi-kasir.buka');
+            Route::post('sesi-kasir/catat-transaksi', [SesiKasirController::class, 'catatTransaksi'])->name('sesi-kasir.catat-transaksi');
+            Route::post('sesi-kasir/tutup', [SesiKasirController::class, 'tutup'])->name('sesi-kasir.tutup');
+            Route::get('sesi-kasir/riwayat', [SesiKasirController::class, 'riwayat'])->name('sesi-kasir.riwayat');
         });
     });
 });

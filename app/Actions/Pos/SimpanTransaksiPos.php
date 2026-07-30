@@ -66,8 +66,16 @@ final readonly class SimpanTransaksiPos
                 );
             }
 
+            $sesiAktif = \App\Models\SesiKasir::query()
+                ->where('pos_user_id', $toko->id)
+                ->whereNull('waktu_tutup')
+                ->latest('waktu_buka')
+                ->first();
+
             $transaksi = Transaksi::query()->create([
                 'pos_user_id' => $toko->id,
+                'sesi_kasir_id' => $sesiAktif?->id,
+                'nama_kasir' => $sesiAktif?->nama_kasir,
                 'nomor_struk' => (new NomorStrukBerikutnya)($toko),
                 'waktu' => now(),
                 'metode' => $metode,
