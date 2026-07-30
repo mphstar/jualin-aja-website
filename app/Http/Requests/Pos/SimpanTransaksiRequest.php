@@ -35,6 +35,8 @@ class SimpanTransaksiRequest extends FormRequest
                 'nullable', 'string', 'min:2', 'max:120',
             ],
             'uangDiterima' => ['nullable', 'integer', 'min:0', 'max:999999999999'],
+            'diskonTipe' => ['nullable', Rule::in(['PERSEN', 'NOMINAL'])],
+            'diskonNilai' => ['nullable', 'integer', 'min:0', 'max:999999999999'],
         ];
     }
 
@@ -67,6 +69,20 @@ class SimpanTransaksiRequest extends FormRequest
     {
         return $this->has('uangDiterima') && $this->input('uangDiterima') !== null
             ? $this->integer('uangDiterima')
+            : null;
+    }
+
+    public function diskonTipe(): ?string
+    {
+        $tipe = strtoupper(trim((string) $this->string('diskonTipe')));
+
+        return in_array($tipe, ['PERSEN', 'NOMINAL'], true) ? $tipe : null;
+    }
+
+    public function diskonNilai(): ?int
+    {
+        return $this->has('diskonNilai') && $this->input('diskonNilai') !== null
+            ? $this->integer('diskonNilai')
             : null;
     }
 }

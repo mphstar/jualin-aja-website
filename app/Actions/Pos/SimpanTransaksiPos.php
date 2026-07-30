@@ -39,6 +39,8 @@ final readonly class SimpanTransaksiPos
         StatusTransaksi $status,
         ?string $pelanggan = null,
         ?int $uangDiterima = null,
+        ?string $diskonTipe = null,
+        ?int $diskonNilai = null,
     ): Transaksi {
         if ($item === []) {
             throw new KesalahanDomain('Transaksi harus berisi setidaknya satu barang.');
@@ -48,14 +50,29 @@ final readonly class SimpanTransaksiPos
             throw new KesalahanDomain('Nama pembeli wajib diisi untuk transaksi bayar nanti.');
         }
 
-        return DB::transaction(function () use ($toko, $item, $metode, $status, $pelanggan, $uangDiterima): Transaksi {
+        return DB::transaction(function () use (
+            $toko, $item, $metode, $status, $pelanggan, $uangDiterima, $diskonTipe, $diskonNilai
+        ): Transaksi {
             $produk = PenjagaStok::kunci(array_keys($item));
             $baris = $this->susunBaris($toko, $item, $produk);
 
-            $total = array_sum(array_map(
+            $subtotal = array_sum(array_map(
                 static fn (array $b): int => $b['harga_satuan'] * $b['jumlah'],
                 $baris,
             ));
+
+            $diskonNominal = 0;
+            $tipeClean = strtoupper(trim((string) $diskonTipe));
+            $nilaiClean = max(0, (int) $diskonNilai);
+
+            if ($tipeClean === 'PERSEN' && $nilaiClean > 0) {
+                $persen = min(100, $nilaiClean);
+                $diskonNominal = (int) round($subtotal * $persen / 100);
+            } else if ($tipeClean === 'NOMINAL' && $nilaiClean > 0) {
+                $diskonNominal = min($subtotal, $nilaiClean);
+            }
+
+            $total = max(0, $subtotal - $diskonNominal);
 
             $this->periksaUang($metode, $status, $total, $uangDiterima);
 
@@ -81,12 +98,13 @@ final readonly class SimpanTransaksiPos
                 'metode' => $metode,
                 'status' => $status,
                 'pelanggan' => $status === StatusTransaksi::Ditahan ? trim((string) $pelanggan) : null,
-                // Uang diterima hanya berarti untuk tunai yang sudah selesai.
-                // Menyimpannya untuk metode lain berarti menyimpan angka yang
-                // tidak pernah benar-benar berpindah tangan.
                 'uang_diterima' => $metode === MetodeBayarPos::Tunai && $status === StatusTransaksi::Selesai
                     ? $uangDiterima
                     : null,
+                'subtotal' => $subtotal,
+                'diskon_tipe' => $diskonNominal > 0 ? $tipeClean : null,
+                'diskon_nilai' => $diskonNominal > 0 ? $nilaiClean : 0,
+                'diskon_nominal' => $diskonNominal,
             ]);
 
             $transaksi->baris()->createMany($baris);

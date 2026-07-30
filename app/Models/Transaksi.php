@@ -36,7 +36,7 @@ use Illuminate\Support\Carbon;
  */
 #[Fillable([
     'pos_user_id', 'sesi_kasir_id', 'nama_kasir', 'nomor_struk', 'waktu', 'metode',
-    'status', 'pelanggan', 'uang_diterima',
+    'status', 'pelanggan', 'uang_diterima', 'subtotal', 'diskon_tipe', 'diskon_nilai', 'diskon_nominal',
 ])]
 class Transaksi extends Model
 {
@@ -53,6 +53,9 @@ class Transaksi extends Model
             'metode' => MetodeBayarPos::class,
             'status' => StatusTransaksi::class,
             'uang_diterima' => 'integer',
+            'subtotal' => 'integer',
+            'diskon_nilai' => 'integer',
+            'diskon_nominal' => 'integer',
         ];
     }
 
@@ -74,16 +77,20 @@ class Transaksi extends Model
         return $this->hasMany(BarisTransaksi::class);
     }
 
-    /**
-     * Diturunkan dari barisnya, tidak disimpan.
-     *
-     * Menuntut relasi `baris` sudah dimuat — `preventLazyLoading` akan
-     * menjerit kalau lupa, dan itu memang yang diinginkan: total yang dihitung
-     * dari relasi yang belum dimuat diam-diam mengembalikan nol.
-     */
+    /** Total belanja sebelum diskon. */
+    public function subtotal(): int
+    {
+        return $this->subtotal > 0
+            ? (int) $this->subtotal
+            : $this->baris->sum(fn (BarisTransaksi $b): int => $b->subtotal());
+    }
+
+    /** Total bayar setelah diskon. */
     public function total(): int
     {
-        return $this->baris->sum(fn (BarisTransaksi $b): int => $b->subtotal());
+        $sub = $this->subtotal();
+        $diskon = (int) $this->diskon_nominal;
+        return max(0, $sub - $diskon);
     }
 
     public function jumlahItem(): int

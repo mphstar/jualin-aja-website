@@ -46,7 +46,14 @@ class TransaksiController extends Controller
         }
 
         if (($sesiId = trim((string) $request->string('sesi_id'))) !== '') {
-            $query->where('sesi_kasir_id', $sesiId);
+            // The mobile app sends kode_sesi (e.g. "SHIFT-xxx") as the session
+            // identifier, but transactions store the numeric primary key in
+            // sesi_kasir_id.  Resolve kode_sesi → id before filtering.
+            $sesi = \App\Models\SesiKasir::query()
+                ->where('kode_sesi', $sesiId)
+                ->first();
+
+            $query->where('sesi_kasir_id', $sesi?->id ?? 0);
         }
 
         if (($namaKasir = trim((string) $request->string('nama_kasir'))) !== '') {
@@ -96,6 +103,8 @@ class TransaksiController extends Controller
             status: $request->status(),
             pelanggan: $request->pelanggan(),
             uangDiterima: $request->uangDiterima(),
+            diskonTipe: $request->diskonTipe(),
+            diskonNilai: $request->diskonNilai(),
         ));
     }
 
