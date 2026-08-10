@@ -278,19 +278,54 @@ export function DataTable<T>({
             )}
 
             {!memuat && !error && barisTampil.length > 0 && (
-                <Paginasi tabel={tabel} />
+                <Paginasi
+                    pageIndex={tabel.getState().pagination.pageIndex}
+                    pageSize={tabel.getState().pagination.pageSize}
+                    pageCount={tabel.getPageCount()}
+                    total={tabel.getRowCount()}
+                    dapatPrevious={tabel.getCanPreviousPage()}
+                    dapatNext={tabel.getCanNextPage()}
+                    keHalaman={tabel.setPageIndex}
+                    keHalamanSebelumnya={tabel.previousPage}
+                    keHalamanBerikutnya={tabel.nextPage}
+                    gantiUkuran={tabel.setPageSize}
+                />
             )}
         </div>
     );
 }
 
-function Paginasi<T>({
-    tabel,
+/**
+ * Bilah paginasi.
+ *
+ * Menerima nilai primitif, bukan objek tabel: React Compiler me-memoize komponen
+ * berdasarkan prop, dan objek `useReactTable` referensinya stabil lintas render —
+ * jika objek itulah yang diteruskan, bilah ini tidak pernah di-render ulang saat
+ * halaman berpindah, meski baris di tabel ikut berganti.
+ */
+function Paginasi({
+    pageIndex,
+    pageSize,
+    pageCount,
+    total,
+    dapatPrevious,
+    dapatNext,
+    keHalaman,
+    keHalamanSebelumnya,
+    keHalamanBerikutnya,
+    gantiUkuran,
 }: {
-    tabel: ReturnType<typeof useReactTable<T>>;
+    pageIndex: number;
+    pageSize: number;
+    pageCount: number;
+    total: number;
+    dapatPrevious: boolean;
+    dapatNext: boolean;
+    keHalaman: (halaman: number) => void;
+    keHalamanSebelumnya: () => void;
+    keHalamanBerikutnya: () => void;
+    gantiUkuran: (n: number) => void;
 }) {
-    const { pageIndex, pageSize } = tabel.getState().pagination;
-    const total = tabel.getRowCount();
     const dari = pageIndex * pageSize + 1;
     const sampai = Math.min((pageIndex + 1) * pageSize, total);
 
@@ -308,7 +343,7 @@ function Paginasi<T>({
                     <span className="text-sm text-muted-foreground">Baris</span>
                     <Select
                         value={String(pageSize)}
-                        onValueChange={(v) => tabel.setPageSize(Number(v))}
+                        onValueChange={(v) => gantiUkuran(Number(v))}
                     >
                         <SelectTrigger size="sm" className="w-[72px]">
                             <SelectValue />
@@ -328,8 +363,8 @@ function Paginasi<T>({
                         variant="outline"
                         size="icon"
                         className="size-8"
-                        onClick={() => tabel.setPageIndex(0)}
-                        disabled={!tabel.getCanPreviousPage()}
+                        onClick={() => keHalaman(0)}
+                        disabled={!dapatPrevious}
                         aria-label="Halaman pertama"
                     >
                         <ChevronsLeftIcon className="size-4" />
@@ -338,21 +373,21 @@ function Paginasi<T>({
                         variant="outline"
                         size="icon"
                         className="size-8"
-                        onClick={() => tabel.previousPage()}
-                        disabled={!tabel.getCanPreviousPage()}
+                        onClick={keHalamanSebelumnya}
+                        disabled={!dapatPrevious}
                         aria-label="Halaman sebelumnya"
                     >
                         <ChevronLeftIcon className="size-4" />
                     </Button>
                     <span className="angka-tabular px-2 text-sm">
-                        {pageIndex + 1} / {Math.max(1, tabel.getPageCount())}
+                        {pageIndex + 1} / {Math.max(1, pageCount)}
                     </span>
                     <Button
                         variant="outline"
                         size="icon"
                         className="size-8"
-                        onClick={() => tabel.nextPage()}
-                        disabled={!tabel.getCanNextPage()}
+                        onClick={keHalamanBerikutnya}
+                        disabled={!dapatNext}
                         aria-label="Halaman berikutnya"
                     >
                         <ChevronRightIcon className="size-4" />
@@ -361,10 +396,8 @@ function Paginasi<T>({
                         variant="outline"
                         size="icon"
                         className="size-8"
-                        onClick={() =>
-                            tabel.setPageIndex(tabel.getPageCount() - 1)
-                        }
-                        disabled={!tabel.getCanNextPage()}
+                        onClick={() => keHalaman(pageCount - 1)}
+                        disabled={!dapatNext}
                         aria-label="Halaman terakhir"
                     >
                         <ChevronsRightIcon className="size-4" />
