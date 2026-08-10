@@ -33,6 +33,14 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         DB::transaction(function (): void {
+            // Produksi: database kosong + empat akun awal (idempotent, aman
+            // dijalankan ulang tiap container naik). Lihat SeederProduksi.
+            if (app()->isProduction()) {
+                $this->call(SeederProduksi::class);
+
+                return;
+            }
+
             User::query()->create([
                 'name' => self::NAMA_ADMIN,
                 'email' => self::EMAIL_ADMIN,

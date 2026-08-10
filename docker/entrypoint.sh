@@ -28,6 +28,12 @@ fi
 echo "==> Menjalankan migrasi basis data..."
 php artisan migrate --force || echo "Migrasi akan dicoba ulang saat basis data siap..."
 
+# Seed data awal. Di production DatabaseSeeder memanggil SeederProduksi yang
+# idempotent (firstOrCreate), jadi aman diulang setiap container naik tanpa
+# menduplikasi data atau menimpa kata sandi yang sudah diganti.
+echo "==> Menjalankan seeder data awal..."
+php artisan db:seed --force || echo "Seeder gagal atau tidak diperlukan..."
+
 # Buat tautan simbolik storage
 if [ ! -d /var/www/html/public/storage ]; then
     echo "==> Membuat storage:link..."
