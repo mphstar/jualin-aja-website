@@ -27,33 +27,10 @@ import {
     TableRow,
 } from '@/components/ui/table';
 import { api, KesalahanApi } from '@/lib/api';
-
-export interface Tiket {
-    id: number;
-    nomorTiket: string;
-    jenis: 'SARAN' | 'KOMPLAIN' | 'PERTANYAAN';
-    jenisLabel: string;
-    subjek: string;
-    pesan: string;
-    status: 'TERBUKA' | 'DIPROSES' | 'SELESAI' | 'DITUTUP';
-    statusLabel: string;
-    prioritas: 'RENDAH' | 'SEDANG' | 'TINGGI';
-    prioritasLabel: string;
-    balasanAdmin: string | null;
-    dibalasPada: string | null;
-    adminNama: string | null;
-    toko: {
-        id: number;
-        nama: string;
-        email: string;
-        namaToko: string;
-        jenisUsaha: string;
-    };
-    dibuatPada: string;
-}
+import type { TiketData } from '@/lib/api/tiket';
 
 export function HalamanTiket() {
-    const [daftar, setDaftar] = useState<Tiket[]>([]);
+    const [daftar, setDaftar] = useState<TiketData[]>([]);
     const [memuat, setMemuat] = useState(true);
     const [cari, setCari] = useState('');
     const [jenisFilter, setJenisFilter] = useState<string>('SEMUA');
@@ -67,7 +44,7 @@ export function HalamanTiket() {
             if (jenisFilter !== 'SEMUA') params.jenis = jenisFilter;
             if (statusFilter !== 'SEMUA') params.status = statusFilter;
 
-            const res = await api.get<{ data: Tiket[] }>('/v1/tiket', params);
+            const res = await api.tiket.ambilDaftarTiket(params);
             setDaftar(res.data);
         } catch (e) {
             const pesan = e instanceof KesalahanApi ? e.message : 'Gagal memuat daftar tiket.';

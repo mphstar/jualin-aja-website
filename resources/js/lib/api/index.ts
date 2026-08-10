@@ -16,6 +16,7 @@ import * as pembayaran from '@/lib/api/pembayaran';
 import * as pengaturan from '@/lib/api/pengaturan';
 import * as pengguna from '@/lib/api/pengguna';
 import * as statistik from '@/lib/api/statistik';
+import * as tiket from '@/lib/api/tiket';
 
 export const api = {
     aktivitas,
@@ -26,6 +27,7 @@ export const api = {
     pengaturan,
     pengguna,
     statistik,
+    tiket,
 };
 
 export { KesalahanApi } from '@/lib/api/client';

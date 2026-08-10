@@ -23,10 +23,10 @@ import {
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { api, KesalahanApi } from '@/lib/api';
-import type { Tiket } from './HalamanTiket';
+import type { TiketData } from '@/lib/api/tiket';
 
 export function HalamanDetailTiket({ id }: { id: string }) {
-    const [tiket, setTiket] = useState<Tiket | null>(null);
+    const [tiket, setTiket] = useState<TiketData | null>(null);
     const [memuat, setMemuat] = useState(true);
     const [balasan, setBalasan] = useState('');
     const [status, setStatus] = useState<string>('SELESAI');
@@ -35,7 +35,7 @@ export function HalamanDetailTiket({ id }: { id: string }) {
     const muatDetail = async () => {
         setMemuat(true);
         try {
-            const data = await api.get<Tiket>(`/v1/tiket/${id}`);
+            const data = await api.tiket.ambilDetailTiket(id);
             setTiket(data);
             if (data.balasanAdmin) {
                 setBalasan(data.balasanAdmin);
@@ -61,10 +61,7 @@ export function HalamanDetailTiket({ id }: { id: string }) {
 
         setMengirim(true);
         try {
-            const res = await api.post<Tiket>(`/v1/tiket/${id}/respon`, {
-                balasan: balasan.trim(),
-                status: status,
-            });
+            const res = await api.tiket.kirimBalasanTiket(id, balasan.trim(), status);
             setTiket(res);
             toast.success('Balasan admin berhasil dikirim & status tiket diperbarui.');
         } catch (e) {
