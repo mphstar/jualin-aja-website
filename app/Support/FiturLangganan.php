@@ -57,6 +57,19 @@ final class FiturLangganan
     }
 
     /**
+     * Apakah versi ini boleh membuat/mencatat transaksi kasir baru?
+     *
+     * Rules:
+     * - Gratis: ❌ Tidak (harus upgrade ke Trial/Langganan aktif)
+     * - Trial: ✅ Ya
+     * - Langganan: ✅ Ya
+     */
+    public static function bolehTransaksi(VersiLangganan $versi): bool
+    {
+        return $versi !== VersiLangganan::Gratis;
+    }
+
+    /**
      * Batas maksimal produk untuk versi ini.
      * Return null jika tidak ada batas (unlimited).
      *

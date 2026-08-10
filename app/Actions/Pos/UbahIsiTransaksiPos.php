@@ -65,7 +65,7 @@ final readonly class UbahIsiTransaksiPos
             $terkunci->baris()->delete();
             $terkunci->baris()->createMany($baris);
 
-            return $terkunci->load('baris');
+            return $terkunci->unsetRelation('baris')->load('baris');
         }, attempts: 3);
     }
 

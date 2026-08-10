@@ -176,6 +176,11 @@ class PosUser extends Authenticatable
         return FiturLangganan::bolehAksesVoucher($this->versiLangganan($sekarang));
     }
 
+    public function bolehTransaksi(?CarbonInterface $sekarang = null): bool
+    {
+        return FiturLangganan::bolehTransaksi($this->versiLangganan($sekarang));
+    }
+
     public function batasMaksimalProduk(?CarbonInterface $sekarang = null): ?int
     {
         return FiturLangganan::batasMaksimalProduk($this->versiLangganan($sekarang));
