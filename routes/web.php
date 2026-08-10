@@ -49,5 +49,10 @@ Route::middleware('auth')->group(function (): void {
         ->name('pembayaran.detail');
 
     Route::inertia('/aktivitas', 'aktivitas/indeks')->name('aktivitas');
+
+    Route::inertia('/tiket', 'tiket/indeks')->name('tiket');
+    Route::get('/tiket/{id}', fn (string $id) => Inertia::render('tiket/detail', ['id' => $id]))
+        ->name('tiket.detail');
+
     Route::inertia('/pengaturan', 'pengaturan/indeks')->name('pengaturan');
 });

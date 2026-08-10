@@ -49,6 +49,7 @@ class DatabaseSeeder extends Seeder
                 EbookSeeder::class,
                 // Menempel pada toko yang sudah ada, jadi harus sesudahnya.
                 PosSeeder::class,
+                TiketSeeder::class,
                 // Terakhir: log diturunkan dari data yang sudah ada, bukan dikarang.
                 LogAktivitasSeeder::class,
             ]);

@@ -12,6 +12,7 @@ use App\Http\Controllers\Api\Mobile\LaporanController;
 use App\Http\Controllers\Api\Mobile\ProdukController as PosProdukController;
 use App\Http\Controllers\Api\Mobile\ProdukEksporImporController as PosProdukEksporImporController;
 use App\Http\Controllers\Api\Mobile\SesiKasirController;
+use App\Http\Controllers\Api\Mobile\TiketController as PosTiketController;
 use App\Http\Controllers\Api\Mobile\TokoController as PosTokoController;
 use App\Http\Controllers\Api\Mobile\TransaksiController as PosTransaksiController;
 use App\Http\Controllers\Api\V1\AktivitasController;
@@ -22,6 +23,7 @@ use App\Http\Controllers\Api\V1\PembayaranController;
 use App\Http\Controllers\Api\V1\PengaturanController;
 use App\Http\Controllers\Api\V1\PenggunaController;
 use App\Http\Controllers\Api\V1\StatistikController;
+use App\Http\Controllers\Api\V1\TiketController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -90,6 +92,11 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
 
         Route::get('pengaturan/harga-paket', [PengaturanController::class, 'hargaPaket'])->name('pengaturan.harga');
         Route::put('pengaturan/harga-paket', [PengaturanController::class, 'simpanHargaPaket'])->name('pengaturan.harga.simpan');
+
+        Route::get('tiket', [TiketController::class, 'index'])->name('tiket.index');
+        Route::get('tiket/{tiket}', [TiketController::class, 'show'])->name('tiket.show');
+        Route::post('tiket/{tiket}/respon', [TiketController::class, 'respon'])->name('tiket.respon');
+        Route::patch('tiket/{tiket}/status', [TiketController::class, 'ubahStatus'])->name('tiket.status');
     });
 });
 
@@ -139,6 +146,10 @@ Route::prefix('mobile/v1')->name('api.mobile.')->group(function (): void {
 
         Route::get('resep', [PosEbookController::class, 'index'])->name('resep.index');
         Route::post('resep/{ebook}/unduh', [PosEbookController::class, 'unduh'])->name('resep.unduh');
+
+        Route::get('tiket', [PosTiketController::class, 'index'])->name('tiket.index');
+        Route::post('tiket', [PosTiketController::class, 'store'])->name('tiket.store');
+        Route::get('tiket/{tiket}', [PosTiketController::class, 'show'])->name('tiket.show');
 
         /*
          * Sisanya butuh langganan yang masih berjalan. Middleware-nya hanya
