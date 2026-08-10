@@ -1,15 +1,19 @@
-import { Link, router } from '@inertiajs/react';
+import { router } from '@inertiajs/react';
 import {
+    AlertCircleIcon,
+    CheckCircle2Icon,
+    ClockIcon,
     MessageSquareIcon,
     SearchIcon,
     XIcon,
 } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
+import { DataTable } from '@/components/shared/DataTable';
 import { PageHeader } from '@/components/shared/PageHeader';
+import { StatCard } from '@/components/shared/StatCard';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import {
     Select,
@@ -18,14 +22,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
-import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from '@/components/ui/table';
+import { buatKolomTiket } from '@/features/tiket/kolomTiket';
 import { api, KesalahanApi } from '@/lib/api';
 import type { TiketData } from '@/lib/api/tiket';
 
@@ -35,6 +32,8 @@ export function HalamanTiket() {
     const [cari, setCari] = useState('');
     const [jenisFilter, setJenisFilter] = useState<string>('SEMUA');
     const [statusFilter, setStatusFilter] = useState<string>('SEMUA');
+
+    const kolom = useMemo(() => buatKolomTiket(), []);
 
     const muatData = async () => {
         setMemuat(true);
@@ -58,17 +57,61 @@ export function HalamanTiket() {
         muatData();
     }, [cari, jenisFilter, statusFilter]);
 
+    // Hitung ringkasan status
+    const totalTiket = daftar.length;
+    const tiketTerbuka = daftar.filter((t) => t.status === 'TERBUKA').length;
+    const tiketDiproses = daftar.filter((t) => t.status === 'DIPROSES').length;
+    const tiketSelesai = daftar.filter((t) => t.status === 'SELESAI').length;
+
     return (
         <div className="space-y-6">
             <PageHeader
                 judul="Saran & Komplain"
-                keterangan="Kelola masukan, laporan bug, dan pertanyaan bantuan dari pengguna aplikasi POS."
+                keterangan="Kelola masukan pengembangan, laporan bug, dan pertanyaan bantuan dari pengguna aplikasi POS."
             />
 
-            {/* Filter & Pencarian */}
-            <Card>
-                <CardContent className="p-4">
-                    <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            {/* Stat Cards */}
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                <StatCard
+                    judul="Total Laporan"
+                    nilai={String(totalTiket)}
+                    ikon={MessageSquareIcon}
+                    keterangan="Masukan & kendala pengguna"
+                    memuat={memuat}
+                />
+                <StatCard
+                    judul="Terbuka"
+                    nilai={String(tiketTerbuka)}
+                    ikon={AlertCircleIcon}
+                    nada={tiketTerbuka > 0 ? 'bahaya' : 'netral'}
+                    keterangan="Belum ditangani admin"
+                    memuat={memuat}
+                />
+                <StatCard
+                    judul="Sedang Diproses"
+                    nilai={String(tiketDiproses)}
+                    ikon={ClockIcon}
+                    nada="peringatan"
+                    keterangan="Dalam tahap investigasi"
+                    memuat={memuat}
+                />
+                <StatCard
+                    judul="Tiket Selesai"
+                    nilai={String(tiketSelesai)}
+                    ikon={CheckCircle2Icon}
+                    keterangan="Telah ditanggapi resmi"
+                    memuat={memuat}
+                />
+            </div>
+
+            {/* Data Table */}
+            <DataTable
+                kolom={kolom}
+                data={daftar}
+                memuat={memuat}
+                onKlikBaris={(t) => router.visit(`/tiket/${t.id}`)}
+                toolbar={
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between pb-2">
                         <div className="relative flex-1 max-w-sm">
                             <SearchIcon className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                             <Input
@@ -90,10 +133,10 @@ export function HalamanTiket() {
                         <div className="flex flex-wrap gap-2">
                             <Select value={jenisFilter} onValueChange={setJenisFilter}>
                                 <SelectTrigger className="w-[180px]">
-                                    <SelectValue placeholder="Jenis Tiket" />
+                                    <SelectValue placeholder="Kategori Tiket" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="SEMUA">Semua Jenis</SelectItem>
+                                    <SelectItem value="SEMUA">Semua Kategori</SelectItem>
                                     <SelectItem value="SARAN">Saran Pengembangan</SelectItem>
                                     <SelectItem value="KOMPLAIN">Komplain / Bug</SelectItem>
                                     <SelectItem value="PERTANYAAN">Pertanyaan</SelectItem>
@@ -114,102 +157,38 @@ export function HalamanTiket() {
                             </Select>
                         </div>
                     </div>
-                </CardContent>
-            </Card>
-
-            {/* Tabel Data Tiket */}
-            <Card>
-                <CardContent className="p-0">
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>No. Tiket</TableHead>
-                                <TableHead>Toko Pelapor</TableHead>
-                                <TableHead>Jenis</TableHead>
-                                <TableHead>Subjek</TableHead>
-                                <TableHead>Status</TableHead>
-                                <TableHead>Dibuat</TableHead>
-                                <TableHead className="text-right">Aksi</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {memuat ? (
-                                <TableRow>
-                                    <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
-                                        Memuat data tiket...
-                                    </TableCell>
-                                </TableRow>
-                            ) : daftar.length === 0 ? (
-                                <TableRow>
-                                    <TableCell colSpan={7} className="text-center py-12 text-muted-foreground">
-                                        <MessageSquareIcon className="mx-auto h-8 w-8 mb-2 opacity-50" />
-                                        Belum ada tiket saran atau komplain yang diterima.
-                                    </TableCell>
-                                </TableRow>
-                            ) : (
-                                daftar.map((t) => (
-                                    <TableRow key={t.id}>
-                                        <TableCell className="font-mono font-medium">{t.nomorTiket}</TableCell>
-                                        <TableCell>
-                                            <div>
-                                                <p className="font-semibold text-sm">{t.toko.namaToko}</p>
-                                                <p className="text-xs text-muted-foreground">{t.toko.nama} ({t.toko.email})</p>
-                                            </div>
-                                        </TableCell>
-                                        <TableCell>
-                                            <Badge
-                                                variant={
-                                                    t.jenis === 'SARAN'
-                                                        ? 'secondary'
-                                                        : t.jenis === 'KOMPLAIN'
-                                                        ? 'destructive'
-                                                        : 'outline'
-                                                }
-                                            >
-                                                {t.jenisLabel}
-                                            </Badge>
-                                        </TableCell>
-                                        <TableCell className="max-w-[240px] truncate font-medium">
-                                            {t.subjek}
-                                        </TableCell>
-                                        <TableCell>
-                                            <Badge
-                                                variant={
-                                                    t.status === 'SELESAI'
-                                                        ? 'default'
-                                                        : t.status === 'DIPROSES'
-                                                        ? 'secondary'
-                                                        : t.status === 'TERBUKA'
-                                                        ? 'destructive'
-                                                        : 'outline'
-                                                }
-                                            >
-                                                {t.statusLabel}
-                                            </Badge>
-                                        </TableCell>
-                                        <TableCell className="text-xs text-muted-foreground">
-                                            {new Date(t.dibuatPada).toLocaleDateString('id-ID', {
-                                                day: 'numeric',
-                                                month: 'short',
-                                                year: 'numeric',
-                                            })}
-                                        </TableCell>
-                                        <TableCell className="text-right">
-                                            <Button
-                                                variant="outline"
-                                                size="sm"
-                                                onClick={() => router.visit(`/tiket/${t.id}`)}
-                                            >
-                                                Detail & Balas
-                                            </Button>
-                                        </TableCell>
-                                    </TableRow>
-                                ))
-                            )}
-                        </TableBody>
-                    </Table>
-                </CardContent>
-            </Card>
+                }
+                kartu={(t) => (
+                    <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                            <span className="font-mono text-xs font-semibold text-primary">
+                                {t.nomorTiket}
+                            </span>
+                            <Badge
+                                variant={
+                                    t.status === 'SELESAI'
+                                        ? 'default'
+                                        : t.status === 'DIPROSES'
+                                        ? 'secondary'
+                                        : t.status === 'TERBUKA'
+                                        ? 'destructive'
+                                        : 'outline'
+                                }
+                            >
+                                {t.statusLabel}
+                            </Badge>
+                        </div>
+                        <p className="font-semibold text-sm">{t.subjek}</p>
+                        <p className="text-xs text-muted-foreground line-clamp-2">{t.pesan}</p>
+                        <div className="flex items-center justify-between text-xs text-muted-foreground pt-1">
+                            <span>{t.toko.namaToko} ({t.toko.nama})</span>
+                            <Badge variant="outline" className="text-[10px]">
+                                {t.jenisLabel}
+                            </Badge>
+                        </div>
+                    </div>
+                )}
+            />
         </div>
     );
 }
