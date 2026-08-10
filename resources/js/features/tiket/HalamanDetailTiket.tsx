@@ -1,4 +1,4 @@
-import { Link, router } from '@inertiajs/react';
+import { router } from '@inertiajs/react';
 import {
     AlertCircleIcon,
     ArrowLeftIcon,
@@ -6,7 +6,6 @@ import {
     CheckCircle2Icon,
     ClockIcon,
     CopyIcon,
-    MailIcon,
     MessageSquareIcon,
     SendIcon,
     ShieldCheckIcon,
@@ -43,12 +42,15 @@ export function HalamanDetailTiket({ id }: { id: string }) {
 
     const muatDetail = async () => {
         setMemuat(true);
+
         try {
             const data = await api.tiket.ambilDetailTiket(id);
             setTiket(data);
+
             if (data.balasanAdmin) {
                 setBalasan(data.balasanAdmin);
             }
+
             setStatus(data.status);
         } catch (e) {
             const pesan = e instanceof KesalahanApi ? e.message : 'Gagal memuat detail tiket.';
@@ -65,10 +67,12 @@ export function HalamanDetailTiket({ id }: { id: string }) {
     const handleKirimBalasan = async () => {
         if (!balasan.trim()) {
             toast.error('Pesan balasan admin tidak boleh kosong.');
+
             return;
         }
 
         setMengirim(true);
+
         try {
             const res = await api.tiket.kirimBalasanTiket(id, balasan.trim(), status);
             setTiket(res);

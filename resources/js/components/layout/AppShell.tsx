@@ -6,7 +6,7 @@
  * studied: yes · pre-emit critique: P5 H5 E4 S5 R5 V4
  */
 import { Link, usePage } from '@inertiajs/react';
-import { ChefHatIcon, PanelLeftOpenIcon } from 'lucide-react';
+import { PanelLeftOpenIcon } from 'lucide-react';
 import { useEffect } from 'react';
 import type { CSSProperties, ReactNode } from 'react';
 import { MenuProfil } from '@/components/layout/MenuProfil';

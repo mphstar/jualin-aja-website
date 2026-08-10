@@ -13,7 +13,6 @@ import { DataTable } from '@/components/shared/DataTable';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { StatCard } from '@/components/shared/StatCard';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
     Select,
@@ -37,11 +36,21 @@ export function HalamanTiket() {
 
     const muatData = async () => {
         setMemuat(true);
+
         try {
             const params: Record<string, string> = {};
-            if (cari) params.cari = cari;
-            if (jenisFilter !== 'SEMUA') params.jenis = jenisFilter;
-            if (statusFilter !== 'SEMUA') params.status = statusFilter;
+
+            if (cari) {
+params.cari = cari;
+}
+
+            if (jenisFilter !== 'SEMUA') {
+params.jenis = jenisFilter;
+}
+
+            if (statusFilter !== 'SEMUA') {
+params.status = statusFilter;
+}
 
             const res = await api.tiket.ambilDaftarTiket(params);
             setDaftar(res.data);

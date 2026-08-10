@@ -72,6 +72,7 @@ export function DialogTambahPengguna({ buka, onTutup, onKirim }: Props) {
 
     function handleGantiDurasi(val: DurasiPaket) {
         setDurasi(val);
+
         if (val === 'TRIAL') {
             setLamaHari(14);
             setSumber('TRIAL');
@@ -93,16 +94,19 @@ export function DialogTambahPengguna({ buka, onTutup, onKirim }: Props) {
 
         if (!nama || !email || !telepon || !namaToko || !kota || !password) {
             setErrorMsg('Harap isi semua kolom wajib.');
+
             return;
         }
 
         if (password.length < 8) {
             setErrorMsg('Kata sandi minimal 8 karakter.');
+
             return;
         }
 
         if (password !== passwordConfirmation) {
             setErrorMsg('Konfirmasi kata sandi tidak cocok.');
+
             return;
         }
 
@@ -145,7 +149,9 @@ export function DialogTambahPengguna({ buka, onTutup, onKirim }: Props) {
         }
     }
 
-    if (!buka) return null;
+    if (!buka) {
+return null;
+}
 
     return (
         <Dialog open onOpenChange={(o) => !o && !mengirim && onTutup()}>

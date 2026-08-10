@@ -1,6 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { router } from '@inertiajs/react';
-import { ChefHatIcon, EyeIcon, EyeOffIcon, Loader2Icon } from 'lucide-react';
+import { EyeIcon, EyeOffIcon, Loader2Icon } from 'lucide-react';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';

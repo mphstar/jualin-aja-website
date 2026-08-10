@@ -1,5 +1,5 @@
-import type { ColumnDef } from '@tanstack/react-table';
 import { router } from '@inertiajs/react';
+import type { ColumnDef } from '@tanstack/react-table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import type { TiketData } from '@/lib/api/tiket';
@@ -30,6 +30,7 @@ export function buatKolomTiket(): ColumnDef<TiketData, unknown>[] {
             header: 'Kategori',
             cell: ({ row }) => {
                 const t = row.original;
+
                 return (
                     <Badge
                         variant={
@@ -60,6 +61,7 @@ export function buatKolomTiket(): ColumnDef<TiketData, unknown>[] {
             header: 'Status',
             cell: ({ row }) => {
                 const t = row.original;
+
                 return (
                     <Badge
                         variant={
