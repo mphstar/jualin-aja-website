@@ -20,8 +20,12 @@ export function buatKolomTiket(): ColumnDef<TiketData, unknown>[] {
             header: 'Toko Pelapor',
             cell: ({ row }) => (
                 <div>
-                    <p className="font-semibold text-sm">{row.original.toko.namaToko}</p>
-                    <p className="text-xs text-muted-foreground">{row.original.toko.nama} ({row.original.toko.email})</p>
+                    <p className="text-sm font-semibold">
+                        {row.original.toko.namaToko}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                        {row.original.toko.nama} ({row.original.toko.email})
+                    </p>
                 </div>
             ),
         },
@@ -37,8 +41,8 @@ export function buatKolomTiket(): ColumnDef<TiketData, unknown>[] {
                             t.jenis === 'SARAN'
                                 ? 'secondary'
                                 : t.jenis === 'KOMPLAIN'
-                                ? 'destructive'
-                                : 'outline'
+                                  ? 'destructive'
+                                  : 'outline'
                         }
                     >
                         {t.jenisLabel}
@@ -51,8 +55,12 @@ export function buatKolomTiket(): ColumnDef<TiketData, unknown>[] {
             header: 'Subjek & Pesan',
             cell: ({ row }) => (
                 <div className="max-w-[280px]">
-                    <p className="font-medium text-sm truncate">{row.original.subjek}</p>
-                    <p className="text-xs text-muted-foreground truncate">{row.original.pesan}</p>
+                    <p className="truncate text-sm font-medium">
+                        {row.original.subjek}
+                    </p>
+                    <p className="truncate text-xs text-muted-foreground">
+                        {row.original.pesan}
+                    </p>
                 </div>
             ),
         },
@@ -68,10 +76,10 @@ export function buatKolomTiket(): ColumnDef<TiketData, unknown>[] {
                             t.status === 'SELESAI'
                                 ? 'default'
                                 : t.status === 'DIPROSES'
-                                ? 'secondary'
-                                : t.status === 'TERBUKA'
-                                ? 'destructive'
-                                : 'outline'
+                                  ? 'secondary'
+                                  : t.status === 'TERBUKA'
+                                    ? 'destructive'
+                                    : 'outline'
                         }
                     >
                         {t.statusLabel}
@@ -83,12 +91,15 @@ export function buatKolomTiket(): ColumnDef<TiketData, unknown>[] {
             accessorKey: 'dibuatPada',
             header: 'Tanggal Dibuat',
             cell: ({ row }) => (
-                <span className="text-xs text-muted-foreground whitespace-nowrap">
-                    {new Date(row.original.dibuatPada).toLocaleDateString('id-ID', {
-                        day: 'numeric',
-                        month: 'short',
-                        year: 'numeric',
-                    })}
+                <span className="text-xs whitespace-nowrap text-muted-foreground">
+                    {new Date(row.original.dibuatPada).toLocaleDateString(
+                        'id-ID',
+                        {
+                            day: 'numeric',
+                            month: 'short',
+                            year: 'numeric',
+                        },
+                    )}
                 </span>
             ),
         },

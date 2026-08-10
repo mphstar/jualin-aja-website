@@ -33,13 +33,19 @@ export interface ParamsTiket {
 }
 
 export const ambilDaftarTiket = (params?: ParamsTiket) =>
-    ambil<Halaman<TiketData>>('/tiket', params as Record<string, string | number | boolean | undefined | null>);
+    ambil<Halaman<TiketData>>(
+        '/tiket',
+        params as Record<string, string | number | boolean | undefined | null>,
+    );
 
 export const ambilDetailTiket = (id: string | number) =>
     ambil<TiketData>(`/tiket/${id}`);
 
-export const kirimBalasanTiket = (id: string | number, balasan: string, status?: string) =>
-    kirim<TiketData>(`/tiket/${id}/respon`, { balasan, status });
+export const kirimBalasanTiket = (
+    id: string | number,
+    balasan: string,
+    status?: string,
+) => kirim<TiketData>(`/tiket/${id}/respon`, { balasan, status });
 
 export const ubahStatusTiket = (id: string | number, status: string) =>
     tambal<TiketData>(`/tiket/${id}/status`, { status });

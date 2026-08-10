@@ -41,21 +41,24 @@ export function HalamanTiket() {
             const params: Record<string, string> = {};
 
             if (cari) {
-params.cari = cari;
-}
+                params.cari = cari;
+            }
 
             if (jenisFilter !== 'SEMUA') {
-params.jenis = jenisFilter;
-}
+                params.jenis = jenisFilter;
+            }
 
             if (statusFilter !== 'SEMUA') {
-params.status = statusFilter;
-}
+                params.status = statusFilter;
+            }
 
             const res = await api.tiket.ambilDaftarTiket(params);
             setDaftar(res.data);
         } catch (e) {
-            const pesan = e instanceof KesalahanApi ? e.message : 'Gagal memuat daftar tiket.';
+            const pesan =
+                e instanceof KesalahanApi
+                    ? e.message
+                    : 'Gagal memuat daftar tiket.';
             toast.error(pesan);
         } finally {
             setMemuat(false);
@@ -120,19 +123,19 @@ params.status = statusFilter;
                 memuat={memuat}
                 onKlikBaris={(t) => router.visit(`/tiket/${t.id}`)}
                 toolbar={
-                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between pb-2">
-                        <div className="relative flex-1 max-w-sm">
-                            <SearchIcon className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                    <div className="flex flex-col gap-3 pb-2 sm:flex-row sm:items-center sm:justify-between">
+                        <div className="relative max-w-sm flex-1">
+                            <SearchIcon className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                             <Input
                                 placeholder="Cari nomor tiket, toko, atau pesan..."
                                 value={cari}
                                 onChange={(e) => setCari(e.target.value)}
-                                className="pl-9 pr-9"
+                                className="pr-9 pl-9"
                             />
                             {cari && (
                                 <button
                                     onClick={() => setCari('')}
-                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                                    className="absolute top-1/2 right-3 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                                 >
                                     <XIcon className="h-4 w-4" />
                                 </button>
@@ -140,28 +143,52 @@ params.status = statusFilter;
                         </div>
 
                         <div className="flex flex-wrap gap-2">
-                            <Select value={jenisFilter} onValueChange={setJenisFilter}>
+                            <Select
+                                value={jenisFilter}
+                                onValueChange={setJenisFilter}
+                            >
                                 <SelectTrigger className="w-[180px]">
                                     <SelectValue placeholder="Kategori Tiket" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="SEMUA">Semua Kategori</SelectItem>
-                                    <SelectItem value="SARAN">Saran Pengembangan</SelectItem>
-                                    <SelectItem value="KOMPLAIN">Komplain / Bug</SelectItem>
-                                    <SelectItem value="PERTANYAAN">Pertanyaan</SelectItem>
+                                    <SelectItem value="SEMUA">
+                                        Semua Kategori
+                                    </SelectItem>
+                                    <SelectItem value="SARAN">
+                                        Saran Pengembangan
+                                    </SelectItem>
+                                    <SelectItem value="KOMPLAIN">
+                                        Komplain / Bug
+                                    </SelectItem>
+                                    <SelectItem value="PERTANYAAN">
+                                        Pertanyaan
+                                    </SelectItem>
                                 </SelectContent>
                             </Select>
 
-                            <Select value={statusFilter} onValueChange={setStatusFilter}>
+                            <Select
+                                value={statusFilter}
+                                onValueChange={setStatusFilter}
+                            >
                                 <SelectTrigger className="w-[160px]">
                                     <SelectValue placeholder="Status Tiket" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="SEMUA">Semua Status</SelectItem>
-                                    <SelectItem value="TERBUKA">Terbuka</SelectItem>
-                                    <SelectItem value="DIPROSES">Diproses</SelectItem>
-                                    <SelectItem value="SELESAI">Selesai</SelectItem>
-                                    <SelectItem value="DITUTUP">Ditutup</SelectItem>
+                                    <SelectItem value="SEMUA">
+                                        Semua Status
+                                    </SelectItem>
+                                    <SelectItem value="TERBUKA">
+                                        Terbuka
+                                    </SelectItem>
+                                    <SelectItem value="DIPROSES">
+                                        Diproses
+                                    </SelectItem>
+                                    <SelectItem value="SELESAI">
+                                        Selesai
+                                    </SelectItem>
+                                    <SelectItem value="DITUTUP">
+                                        Ditutup
+                                    </SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>
@@ -178,19 +205,23 @@ params.status = statusFilter;
                                     t.status === 'SELESAI'
                                         ? 'default'
                                         : t.status === 'DIPROSES'
-                                        ? 'secondary'
-                                        : t.status === 'TERBUKA'
-                                        ? 'destructive'
-                                        : 'outline'
+                                          ? 'secondary'
+                                          : t.status === 'TERBUKA'
+                                            ? 'destructive'
+                                            : 'outline'
                                 }
                             >
                                 {t.statusLabel}
                             </Badge>
                         </div>
-                        <p className="font-semibold text-sm">{t.subjek}</p>
-                        <p className="text-xs text-muted-foreground line-clamp-2">{t.pesan}</p>
-                        <div className="flex items-center justify-between text-xs text-muted-foreground pt-1">
-                            <span>{t.toko.namaToko} ({t.toko.nama})</span>
+                        <p className="text-sm font-semibold">{t.subjek}</p>
+                        <p className="line-clamp-2 text-xs text-muted-foreground">
+                            {t.pesan}
+                        </p>
+                        <div className="flex items-center justify-between pt-1 text-xs text-muted-foreground">
+                            <span>
+                                {t.toko.namaToko} ({t.toko.nama})
+                            </span>
                             <Badge variant="outline" className="text-[10px]">
                                 {t.jenisLabel}
                             </Badge>

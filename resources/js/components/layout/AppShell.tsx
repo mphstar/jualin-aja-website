@@ -73,7 +73,11 @@ function BarisMerek() {
                 aria-label="Lebarkan sidebar"
                 className="group/logo mx-auto flex size-10 shrink-0 items-center justify-center rounded-control hover:bg-muted/50"
             >
-                <img src="/logo.png" alt="JualinAja" className="size-8 object-contain group-hover/logo:hidden" />
+                <img
+                    src="/logo.png"
+                    alt="JualinAja"
+                    className="size-8 object-contain group-hover/logo:hidden"
+                />
                 <PanelLeftOpenIcon className="hidden size-[1.125rem] group-hover/logo:block" />
             </button>
         );

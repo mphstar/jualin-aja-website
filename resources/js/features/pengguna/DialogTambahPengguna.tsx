@@ -142,7 +142,9 @@ export function DialogTambahPengguna({ buka, onTutup, onKirim }: Props) {
             onTutup();
         } catch (e) {
             setErrorMsg(
-                e instanceof KesalahanApi ? e.message : 'Gagal menambahkan pengguna.',
+                e instanceof KesalahanApi
+                    ? e.message
+                    : 'Gagal menambahkan pengguna.',
             );
         } finally {
             setMengirim(false);
@@ -150,8 +152,8 @@ export function DialogTambahPengguna({ buka, onTutup, onKirim }: Props) {
     }
 
     if (!buka) {
-return null;
-}
+        return null;
+    }
 
     return (
         <Dialog open onOpenChange={(o) => !o && !mengirim && onTutup()}>
@@ -159,7 +161,8 @@ return null;
                 <DialogHeader>
                     <DialogTitle>Tambah Pelanggan Baru</DialogTitle>
                     <DialogDescription>
-                        Daftarkan pemilik toko secara manual ke platform Jualin Aja.
+                        Daftarkan pemilik toko secara manual ke platform Jualin
+                        Aja.
                     </DialogDescription>
                 </DialogHeader>
 
@@ -173,7 +176,8 @@ return null;
                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                         <div className="grid gap-2">
                             <Label htmlFor="nama">
-                                Nama Lengkap <span className="text-destructive">*</span>
+                                Nama Lengkap{' '}
+                                <span className="text-destructive">*</span>
                             </Label>
                             <Input
                                 id="nama"
@@ -186,7 +190,8 @@ return null;
 
                         <div className="grid gap-2">
                             <Label htmlFor="email">
-                                Email <span className="text-destructive">*</span>
+                                Email{' '}
+                                <span className="text-destructive">*</span>
                             </Label>
                             <Input
                                 id="email"
@@ -202,7 +207,8 @@ return null;
                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                         <div className="grid gap-2">
                             <Label htmlFor="telepon">
-                                No. Telepon <span className="text-destructive">*</span>
+                                No. Telepon{' '}
+                                <span className="text-destructive">*</span>
                             </Label>
                             <Input
                                 id="telepon"
@@ -215,7 +221,8 @@ return null;
 
                         <div className="grid gap-2">
                             <Label htmlFor="namaToko">
-                                Nama Toko <span className="text-destructive">*</span>
+                                Nama Toko{' '}
+                                <span className="text-destructive">*</span>
                             </Label>
                             <Input
                                 id="namaToko"
@@ -230,11 +237,14 @@ return null;
                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                         <div className="grid gap-2">
                             <Label htmlFor="jenisUsaha">
-                                Jenis Usaha <span className="text-destructive">*</span>
+                                Jenis Usaha{' '}
+                                <span className="text-destructive">*</span>
                             </Label>
                             <Select
                                 value={jenisUsaha}
-                                onValueChange={(v) => setJenisUsaha(v as JenisUsaha)}
+                                onValueChange={(v) =>
+                                    setJenisUsaha(v as JenisUsaha)
+                                }
                             >
                                 <SelectTrigger id="jenisUsaha">
                                     <SelectValue />
@@ -277,7 +287,8 @@ return null;
                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                         <div className="grid gap-2">
                             <Label htmlFor="password">
-                                Kata Sandi <span className="text-destructive">*</span>
+                                Kata Sandi{' '}
+                                <span className="text-destructive">*</span>
                             </Label>
                             <Input
                                 id="password"
@@ -291,13 +302,16 @@ return null;
 
                         <div className="grid gap-2">
                             <Label htmlFor="passwordConfirmation">
-                                Konfirmasi Kata Sandi <span className="text-destructive">*</span>
+                                Konfirmasi Kata Sandi{' '}
+                                <span className="text-destructive">*</span>
                             </Label>
                             <Input
                                 id="passwordConfirmation"
                                 type="password"
                                 value={passwordConfirmation}
-                                onChange={(e) => setPasswordConfirmation(e.target.value)}
+                                onChange={(e) =>
+                                    setPasswordConfirmation(e.target.value)
+                                }
                                 placeholder="Ulangi kata sandi"
                                 required
                             />
@@ -311,7 +325,10 @@ return null;
                                 checked={adaLangganan}
                                 onCheckedChange={(c) => setAdaLangganan(!!c)}
                             />
-                            <Label htmlFor="adaLangganan" className="cursor-pointer font-medium">
+                            <Label
+                                htmlFor="adaLangganan"
+                                className="cursor-pointer font-medium"
+                            >
                                 Tambahkan Paket Langganan Awal
                             </Label>
                         </div>
@@ -320,57 +337,93 @@ return null;
                             <div className="mt-4 grid gap-4">
                                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
                                     <div className="grid gap-2">
-                                        <Label htmlFor="durasi">Durasi Paket</Label>
+                                        <Label htmlFor="durasi">
+                                            Durasi Paket
+                                        </Label>
                                         <Select
                                             value={durasi}
-                                            onValueChange={(v) => handleGantiDurasi(v as DurasiPaket)}
+                                            onValueChange={(v) =>
+                                                handleGantiDurasi(
+                                                    v as DurasiPaket,
+                                                )
+                                            }
                                         >
                                             <SelectTrigger id="durasi">
                                                 <SelectValue />
                                             </SelectTrigger>
                                             <SelectContent>
-                                                <SelectItem value="TRIAL">Uji Coba (Trial)</SelectItem>
-                                                <SelectItem value="BULANAN">1 Bulan</SelectItem>
-                                                <SelectItem value="SEMESTERAN">6 Bulan</SelectItem>
-                                                <SelectItem value="TAHUNAN">12 Bulan</SelectItem>
+                                                <SelectItem value="TRIAL">
+                                                    Uji Coba (Trial)
+                                                </SelectItem>
+                                                <SelectItem value="BULANAN">
+                                                    1 Bulan
+                                                </SelectItem>
+                                                <SelectItem value="SEMESTERAN">
+                                                    6 Bulan
+                                                </SelectItem>
+                                                <SelectItem value="TAHUNAN">
+                                                    12 Bulan
+                                                </SelectItem>
                                             </SelectContent>
                                         </Select>
                                     </div>
 
                                     <div className="grid gap-2">
                                         <Label htmlFor="sumber">Sumber</Label>
-                                        <Select value={sumber} onValueChange={setSumber}>
+                                        <Select
+                                            value={sumber}
+                                            onValueChange={setSumber}
+                                        >
                                             <SelectTrigger id="sumber">
                                                 <SelectValue />
                                             </SelectTrigger>
                                             <SelectContent>
-                                                <SelectItem value="PERPANJANGAN_MANUAL">Perpanjangan Manual</SelectItem>
-                                                <SelectItem value="TRIAL">Uji Coba</SelectItem>
-                                                <SelectItem value="HADIAH">Hadiah</SelectItem>
-                                                <SelectItem value="PEMBELIAN">Pembelian</SelectItem>
+                                                <SelectItem value="PERPANJANGAN_MANUAL">
+                                                    Perpanjangan Manual
+                                                </SelectItem>
+                                                <SelectItem value="TRIAL">
+                                                    Uji Coba
+                                                </SelectItem>
+                                                <SelectItem value="HADIAH">
+                                                    Hadiah
+                                                </SelectItem>
+                                                <SelectItem value="PEMBELIAN">
+                                                    Pembelian
+                                                </SelectItem>
                                             </SelectContent>
                                         </Select>
                                     </div>
 
                                     <div className="grid gap-2">
-                                        <Label htmlFor="lamaHari">Lama Berlaku (Hari)</Label>
+                                        <Label htmlFor="lamaHari">
+                                            Lama Berlaku (Hari)
+                                        </Label>
                                         <Input
                                             id="lamaHari"
                                             type="number"
                                             min={1}
                                             max={3650}
                                             value={lamaHari}
-                                            onChange={(e) => setLamaHari(parseInt(e.target.value) || 1)}
+                                            onChange={(e) =>
+                                                setLamaHari(
+                                                    parseInt(e.target.value) ||
+                                                        1,
+                                                )
+                                            }
                                         />
                                     </div>
                                 </div>
 
                                 <div className="grid gap-2">
-                                    <Label htmlFor="catatan">Catatan Langganan</Label>
+                                    <Label htmlFor="catatan">
+                                        Catatan Langganan
+                                    </Label>
                                     <Input
                                         id="catatan"
                                         value={catatan}
-                                        onChange={(e) => setCatatan(e.target.value)}
+                                        onChange={(e) =>
+                                            setCatatan(e.target.value)
+                                        }
                                         placeholder="Misal: Paket promo pendaftaran pertama"
                                     />
                                 </div>
@@ -388,7 +441,9 @@ return null;
                             Batal
                         </Button>
                         <Button type="submit" disabled={mengirim}>
-                            {mengirim && <Loader2Icon className="mr-2 size-4 animate-spin" />}
+                            {mengirim && (
+                                <Loader2Icon className="mr-2 size-4 animate-spin" />
+                            )}
                             {mengirim ? 'Menyimpan…' : 'Simpan Pengguna'}
                         </Button>
                     </DialogFooter>
