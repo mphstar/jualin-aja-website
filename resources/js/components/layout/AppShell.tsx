@@ -71,30 +71,27 @@ function BarisMerek() {
                 onClick={toggleSidebar}
                 title="Lebarkan sidebar"
                 aria-label="Lebarkan sidebar"
-                // Kotak merek tetap; hanya glyph di dalamnya yang berganti saat
-                // disentuh kursor — menukar seluruh kotak terasa melompat.
-                className="group/logo mx-auto flex size-10 shrink-0 items-center justify-center rounded-control bg-primary text-primary-foreground"
+                className="group/logo mx-auto flex size-10 shrink-0 items-center justify-center rounded-control hover:bg-muted/50"
             >
-                <ChefHatIcon className="size-6 group-hover/logo:hidden" />
+                <img src="/logo.png" alt="JualinAja" className="size-8 object-contain group-hover/logo:hidden" />
                 <PanelLeftOpenIcon className="hidden size-[1.125rem] group-hover/logo:block" />
             </button>
         );
     }
 
     return (
-        // Pemisah di referensi adalah `border-b` pada baris ini + `pb-3`,
-        // bukan elemen <Separator> tersendiri.
         <div className="flex items-center gap-2.5 border-b border-sidebar-border pb-3 group-data-[collapsible=icon]:border-b-0">
             <Link
                 href="/dasbor"
                 className="flex min-w-0 flex-1 items-center gap-2.5 rounded-control"
             >
-                <div className="flex size-10 shrink-0 items-center justify-center rounded-control bg-primary text-primary-foreground">
-                    <ChefHatIcon className="size-6" />
-                </div>
-                {/* 14 px — bukan 18. Wordmark di referensi justru sekecil teks nav. */}
-                <span className="truncate text-sm font-semibold group-data-[collapsible=icon]:hidden">
-                    Admin POS
+                <img
+                    src="/logo.png"
+                    alt="JualinAja Logo"
+                    className="size-9 shrink-0 object-contain"
+                />
+                <span className="truncate text-sm font-bold group-data-[collapsible=icon]:hidden">
+                    JualinAja Admin
                 </span>
             </Link>
 
