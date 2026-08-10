@@ -194,17 +194,14 @@ class PosUser extends Authenticatable
     /**
      * Boleh memakai kasir?
      *
-     * Kedaluwarsa dan nonaktif sama-sama menutup aplikasi, tapi hanya untuk
-     * rute operasional — halaman langganan dan pembayaran tetap terbuka.
-     * Aplikasi yang mengunci pintu keluarnya sendiri adalah aplikasi yang
-     * tidak bisa diperpanjang.
+     * Hanya toko nonaktif (ditangguhkan admin) yang tertutup. Kedaluwarsa
+     * (Gratis) dan Trial tetap boleh mencatat transaksi — dan halaman
+     * langganan serta pembayaran selalu terbuka, karena aplikasi yang
+     * mengunci pintu keluarnya sendiri tidak bisa diperpanjang.
      */
     public function langgananBerjalan(?CarbonInterface $sekarang = null): bool
     {
-        $status = $this->status($sekarang);
-
-        return $status !== StatusLangganan::Kedaluwarsa
-            && $status !== StatusLangganan::Nonaktif;
+        return ! $this->ditangguhkan && $this->status($sekarang) !== StatusLangganan::Nonaktif;
     }
 
     /**

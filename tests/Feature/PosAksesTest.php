@@ -178,8 +178,24 @@ it('menolak menjual produk milik toko lain', function (): void {
 // Gerbang langganan
 // ---------------------------------------------------------------------------
 
-it('menolak transaksi baru saat langganan kedaluwarsa', function (): void {
+it('tetap mengizinkan transaksi baru saat langganan kedaluwarsa', function (): void {
     $toko = PosUser::factory()->kedaluwarsa()->create();
+    $produk = Produk::factory()->untukToko($toko)->create();
+
+    // Paket Gratis (kedaluwarsa) TIDAK dikunci dari kasir — yang dibatasi
+    // hanya jumlah produk, voucher/diskon, dan katalog resep.
+    $this->actingAs($toko, 'pos')
+        ->postJson(route('api.mobile.transaksi.store'), [
+            'item' => [['produkId' => $produk->id, 'jumlah' => 1]],
+            'metode' => 'QRIS',
+            'status' => 'SELESAI',
+        ])->assertCreated();
+
+    expect(Transaksi::query()->count())->toBe(1);
+});
+
+it('mengizinkan transaksi baru untuk akun trial', function (): void {
+    $toko = PosUser::factory()->trial()->create();
     $produk = Produk::factory()->untukToko($toko)->create();
 
     $this->actingAs($toko, 'pos')
@@ -187,8 +203,9 @@ it('menolak transaksi baru saat langganan kedaluwarsa', function (): void {
             'item' => [['produkId' => $produk->id, 'jumlah' => 1]],
             'metode' => 'QRIS',
             'status' => 'SELESAI',
-        ])->assertStatus(402)
-        ->assertJsonPath('kode', 'LANGGANAN_KEDALUWARSA');
+        ])->assertCreated();
+
+    expect(Transaksi::query()->count())->toBe(1);
 });
 
 it('tetap mengizinkan membaca katalog saat langganan kedaluwarsa', function (): void {
@@ -210,7 +227,7 @@ it('tetap membuka halaman langganan saat sudah kedaluwarsa', function (): void {
     $this->actingAs($toko, 'pos')
         ->getJson(route('api.mobile.langganan'))
         ->assertOk()
-        ->assertJsonPath('langganan.bolehTransaksi', false)
+        ->assertJsonPath('langganan.bolehTransaksi', true)
         ->assertJsonPath('langganan.status', 'KEDALUWARSA');
 });
 

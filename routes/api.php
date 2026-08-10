@@ -152,8 +152,9 @@ Route::prefix('mobile/v1')->name('api.mobile.')->group(function (): void {
         Route::get('tiket/{tiket}', [PosTiketController::class, 'show'])->name('tiket.show');
 
         /*
-         * Sisanya butuh langganan yang masih berjalan. Middleware-nya hanya
-         * menahan penulisan — membaca tetap terbuka, karena kasir yang tidak
+         * Rute operasional toko. Middleware-nya hanya menahan penulisan oleh
+         * toko nonaktif — akun Gratis (kedaluwarsa) dan Trial tetap boleh
+         * mencatat transaksi. Membaca selalu terbuka, karena kasir yang tidak
          * bisa melihat daftar produknya sendiri akan mengira datanya hilang.
          */
         Route::middleware('langganan.berjalan')->group(function (): void {

@@ -10,14 +10,20 @@ use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
- * Kunci rute operasional saat langganan sudah kedaluwarsa.
+ * Pagar pertahanan untuk rute operasional (kasir, produk, kategori, laporan).
  *
- * Dipasang HANYA pada kasir, produk, kategori, dan laporan — bukan pada
- * seluruh grup. Halaman langganan, riwayat tagihan, dan pembuatan tagihan
- * harus tetap terbuka: aplikasi yang mengunci pintu keluarnya sendiri adalah
- * aplikasi yang tidak bisa diperpanjang, dan pemilik toko yang lupa membayar
- * akan berakhir menelepon dukungan untuk sesuatu yang seharusnya bisa ia
- * selesaikan sendiri dalam dua ketukan.
+ * Yang ditahan di sini HANYA toko nonaktif (ditangguhkan admin) — itu pun
+ * biasanya sudah lebih dulu dicegat PastikanPosUser. Akun Gratis
+ * (kedaluwarsa) dan Trial TETAP boleh menulis, termasuk mencatat transaksi
+ * baru; yang dibatasi untuk Gratis hanya jumlah produk, voucher/diskon, dan
+ * katalog resep (lihat FiturLangganan).
+ *
+ * Dipasang HANYA pada rute operasional — bukan pada seluruh grup. Halaman
+ * langganan, riwayat tagihan, dan pembuatan tagihan harus tetap terbuka:
+ * aplikasi yang mengunci pintu keluarnya sendiri adalah aplikasi yang tidak
+ * bisa diperpanjang, dan pemilik toko yang lupa membayar akan berakhir
+ * menelepon dukungan untuk sesuatu yang seharusnya bisa ia selesaikan
+ * sendiri dalam dua ketukan.
  *
  * Membaca tetap diizinkan; yang ditolak hanya penulisan. Kasir yang tidak bisa
  * melihat daftar produknya sendiri kehilangan datanya di mata pemiliknya —

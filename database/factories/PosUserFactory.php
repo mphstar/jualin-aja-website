@@ -69,6 +69,16 @@ class PosUserFactory extends Factory
         ]);
     }
 
+    /** Akun uji coba yang masih berjalan (sisa di atas ambang "akan berakhir"). */
+    public function trial(int $sisaHari = 10): static
+    {
+        return $this->state(fn (array $attributes): array => [
+            'langganan_berakhir_pada' => now()->addDays($sisaHari),
+            'langganan_durasi' => DurasiPaket::Trial,
+            'langganan_sumber' => SumberLangganan::Trial,
+        ]);
+    }
+
     public function ditangguhkan(string $alasan = 'Melanggar ketentuan layanan.'): static
     {
         return $this->state(fn (array $attributes): array => [
