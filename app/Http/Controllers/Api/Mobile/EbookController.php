@@ -28,7 +28,7 @@ class EbookController extends Controller
     public function index(Request $request): AnonymousResourceCollection
     {
         $toko = $this->toko($request);
-        $boleh = $toko->langgananBerjalan();
+        $boleh = $toko->bolehAksesResep();
 
         $daftar = Ebook::query()
             ->where('status', StatusEbook::Terbit->value)
@@ -52,9 +52,9 @@ class EbookController extends Controller
     {
         $toko = $this->toko($request);
 
-        if (! $toko->langgananBerjalan()) {
+        if (! $toko->bolehAksesResep()) {
             return response()->json([
-                'message' => 'Langganan sudah berakhir. Perpanjang untuk mengunduh resep.',
+                'message' => 'Akses resep hanya tersedia untuk paket Langganan. Tingkatkan paket untuk mengunduh resep.',
                 'kode' => 'LANGGANAN_KEDALUWARSA',
             ], Response::HTTP_PAYMENT_REQUIRED);
         }

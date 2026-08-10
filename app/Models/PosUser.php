@@ -8,6 +8,8 @@ use App\Enums\DurasiPaket;
 use App\Enums\JenisUsaha;
 use App\Enums\StatusLangganan;
 use App\Enums\SumberLangganan;
+use App\Enums\VersiLangganan;
+use App\Support\FiturLangganan;
 use App\Support\KondisiLangganan;
 use Carbon\CarbonInterface;
 use Database\Factories\PosUserFactory;
@@ -157,6 +159,31 @@ class PosUser extends Authenticatable
         }
 
         return KondisiLangganan::sisaHari($this->langganan_berakhir_pada, $sekarang);
+    }
+
+    public function versiLangganan(?CarbonInterface $sekarang = null): VersiLangganan
+    {
+        return FiturLangganan::versiDariStatus($this->status($sekarang));
+    }
+
+    public function bolehAksesResep(?CarbonInterface $sekarang = null): bool
+    {
+        return FiturLangganan::bolehAksesResep($this->versiLangganan($sekarang));
+    }
+
+    public function bolehAksesVoucher(?CarbonInterface $sekarang = null): bool
+    {
+        return FiturLangganan::bolehAksesVoucher($this->versiLangganan($sekarang));
+    }
+
+    public function batasMaksimalProduk(?CarbonInterface $sekarang = null): ?int
+    {
+        return FiturLangganan::batasMaksimalProduk($this->versiLangganan($sekarang));
+    }
+
+    public function bolehTambahProduk(int $jumlahTerpasang = 0, int $tambahan = 1, ?CarbonInterface $sekarang = null): bool
+    {
+        return FiturLangganan::bolehTambahProduk($this->versiLangganan($sekarang), $jumlahTerpasang, $tambahan);
     }
 
     /**

@@ -48,6 +48,18 @@ class SimpanTransaksiRequest extends FormRequest
         ];
     }
 
+    public function withValidator(\Illuminate\Validation\Validator|\Illuminate\Contracts\Validation\Validator $validator): void
+    {
+        $validator->after(function (\Illuminate\Contracts\Validation\Validator $v): void {
+            $user = $this->user();
+            if ($user !== null && ! $user->bolehAksesVoucher()) {
+                if (($this->diskonNilai() ?? 0) > 0 || $this->diskonTipe() !== null) {
+                    $v->errors()->add('diskonNilai', 'Fitur diskon/voucher tidak tersedia untuk paket versi Gratis. Tingkatkan ke paket Trial atau Langganan.');
+                }
+            }
+        });
+    }
+
     public function metode(): MetodeBayarPos
     {
         return MetodeBayarPos::from((string) $this->string('metode'));

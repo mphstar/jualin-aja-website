@@ -45,7 +45,20 @@ class ProdukController extends Controller
 
     public function store(SimpanProdukRequest $request, SimpanProdukPos $simpan): ProdukResource
     {
-        return new ProdukResource($simpan($this->toko($request), $request->nilai()));
+        $toko = $this->toko($request);
+        $jumlahSaatIni = $toko->produk()->count();
+
+        if (! $toko->bolehTambahProduk($jumlahSaatIni, 1)) {
+            $batas = $toko->batasMaksimalProduk();
+            abort(response()->json([
+                'message' => 'Batas maksimal produk untuk versi Gratis telah tercapai (maksimal '.$batas.' produk). Tingkatkan paket untuk menambah produk tanpa batas.',
+                'errors' => [
+                    'produk' => ['Batas maksimal produk untuk versi Gratis telah tercapai (maksimal '.$batas.' produk).'],
+                ],
+            ], 422));
+        }
+
+        return new ProdukResource($simpan($toko, $request->nilai()));
     }
 
     public function update(

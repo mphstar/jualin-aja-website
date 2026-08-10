@@ -221,8 +221,9 @@ class ProdukEksporImporController extends Controller
         $totalBaris = count($rows);
         $berhasilCount = 0;
         $rincianGagal = [];
+        $jumlahProdukSaatIni = $toko->produk()->count();
 
-        DB::transaction(function () use ($rows, $toko, &$berhasilCount, &$rincianGagal): void {
+        DB::transaction(function () use ($rows, $toko, &$berhasilCount, &$rincianGagal, &$jumlahProdukSaatIni): void {
             foreach ($rows as $index => $row) {
                 $nomorBaris = $index + 2;
 
@@ -242,6 +243,20 @@ class ProdukEksporImporController extends Controller
                     $rincianGagal[] = [
                         'baris' => $nomorBaris,
                         'alasan' => 'Nama produk wajib diisi.',
+                    ];
+                    continue;
+                }
+
+                // Cek apakah produk sudah ada (update) atau produk baru (insert)
+                $produkEksis = Produk::query()
+                    ->where('pos_user_id', $toko->id)
+                    ->where('nama', $nama)
+                    ->exists();
+
+                if (! $produkEksis && ! $toko->bolehTambahProduk($jumlahProdukSaatIni, 1)) {
+                    $rincianGagal[] = [
+                        'baris' => $nomorBaris,
+                        'alasan' => 'Batas maksimal produk ('.$toko->batasMaksimalProduk().') untuk paket Gratis telah tercapai.',
                     ];
                     continue;
                 }
@@ -276,6 +291,7 @@ class ProdukEksporImporController extends Controller
                 );
 
                 // Buat atau perbarui produk
+                $produkBaru = ! $produkEksis;
                 Produk::query()->updateOrCreate(
                     [
                         'pos_user_id' => $toko->id,
@@ -289,6 +305,10 @@ class ProdukEksporImporController extends Controller
                         'stok' => $stokClean,
                     ],
                 );
+
+                if ($produkBaru) {
+                    $jumlahProdukSaatIni++;
+                }
 
                 $berhasilCount++;
             }
