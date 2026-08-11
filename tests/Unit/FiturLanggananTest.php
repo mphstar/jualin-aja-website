@@ -27,16 +27,16 @@ test('akses voucher untuk trial dan langganan', function (): void {
     expect(FiturLangganan::bolehAksesVoucher(VersiLangganan::Langganan))->toBeTrue();
 });
 
-test('batas produk gratis 20 dan unlimited untuk trial/langganan', function (): void {
-    expect(FiturLangganan::batasMaksimalProduk(VersiLangganan::Gratis))->toBe(20);
+test('batas produk gratis 5 dan unlimited untuk trial/langganan', function (): void {
+    expect(FiturLangganan::batasMaksimalProduk(VersiLangganan::Gratis))->toBe(5);
     expect(FiturLangganan::batasMaksimalProduk(VersiLangganan::Trial))->toBeNull();
     expect(FiturLangganan::batasMaksimalProduk(VersiLangganan::Langganan))->toBeNull();
 });
 
 test('pemeriksaan penambahan produk', function (): void {
-    // Versi Gratis: batas 20
-    expect(FiturLangganan::bolehTambahProduk(VersiLangganan::Gratis, 19, 1))->toBeTrue();
-    expect(FiturLangganan::bolehTambahProduk(VersiLangganan::Gratis, 20, 1))->toBeFalse();
+    // Versi Gratis: batas 5
+    expect(FiturLangganan::bolehTambahProduk(VersiLangganan::Gratis, 4, 1))->toBeTrue();
+    expect(FiturLangganan::bolehTambahProduk(VersiLangganan::Gratis, 5, 1))->toBeFalse();
 
     // Versi Trial & Langganan: tanpa batas
     expect(FiturLangganan::bolehTambahProduk(VersiLangganan::Trial, 100, 10))->toBeTrue();

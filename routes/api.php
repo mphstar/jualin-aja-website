@@ -175,6 +175,7 @@ Route::prefix('mobile/v1')->name('api.mobile.')->group(function (): void {
             Route::get('produk', [PosProdukController::class, 'index'])->name('produk.index');
             Route::post('produk', [PosProdukController::class, 'store'])->name('produk.store');
             Route::patch('produk/{produk}', [PosProdukController::class, 'update'])->name('produk.update');
+            Route::delete('produk/{produk}', [PosProdukController::class, 'destroy'])->name('produk.destroy');
 
             Route::get('transaksi/piutang', [PosTransaksiController::class, 'piutang'])->name('transaksi.piutang');
             Route::get('transaksi/nomor-berikutnya', [PosTransaksiController::class, 'nomorBerikutnya'])->name('transaksi.nomor');

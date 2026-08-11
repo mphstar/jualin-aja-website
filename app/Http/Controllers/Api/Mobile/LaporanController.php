@@ -33,17 +33,24 @@ class LaporanController extends Controller
             $periodeVal = 'TUJUH_HARI';
         }
 
-        if ($request->filled('dari') && $request->filled('sampai')) {
+        $dariInput = $request->input('dari') ?? $request->input('mulai');
+        $sampaiInput = $request->input('sampai') ?? $request->input('selesai');
+        $adaTanggalSpesifik = !empty($dariInput) && !empty($sampaiInput);
+
+        if ($adaTanggalSpesifik) {
             try {
-                $dari = CarbonImmutable::parse((string) $request->string('dari'))->startOfDay();
-                $sampai = CarbonImmutable::parse((string) $request->string('sampai'))->endOfDay();
+                $dari = CarbonImmutable::parse((string) $dariInput)->startOfDay();
+                $sampai = CarbonImmutable::parse((string) $sampaiInput)->endOfDay();
             } catch (\Throwable) {
                 $sampai = CarbonImmutable::now()->endOfDay();
                 $dari = $sampai->startOfDay()->subDays(6);
                 $periodeVal = 'TUJUH_HARI';
             }
         } else {
-            if ($periodeVal === 'TAHUNAN') {
+            if ($periodeVal === 'HARI_INI') {
+                $sampai = CarbonImmutable::now()->endOfDay();
+                $dari = $sampai->startOfDay();
+            } else if ($periodeVal === 'TAHUNAN') {
                 $sampai = CarbonImmutable::now()->endOfDay();
                 $dari = CarbonImmutable::create($sampai->year, 1, 1)->startOfDay();
             } else if ($periodeVal === 'TIGA_PULUH_HARI') {
@@ -59,7 +66,9 @@ class LaporanController extends Controller
 
         $periodeLabel = match ($periodeVal) {
             'HARI_INI' => $dari->translatedFormat('d M Y'),
-            'TUJUH_HARI' => '7 hari',
+            'TUJUH_HARI' => $adaTanggalSpesifik
+                ? $dari->translatedFormat('d M Y') . ' - ' . $sampai->translatedFormat('d M Y')
+                : '7 hari',
             'TIGA_PULUH_HARI' => 'Bulan ' . $dari->translatedFormat('F Y'),
             'TAHUNAN' => 'Tahun ' . $dari->year,
             default => $dari->translatedFormat('d M Y') . ' - ' . $sampai->translatedFormat('d M Y'),

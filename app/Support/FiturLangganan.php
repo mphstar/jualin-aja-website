@@ -74,7 +74,7 @@ final class FiturLangganan
      * Return null jika tidak ada batas (unlimited).
      *
      * Rules:
-     * - Gratis: 20 (bisa dikustomisasi via config/langganan.php)
+     * - Gratis: 5 (bisa dikustomisasi via config/langganan.php)
      * - Trial: null (unlimited)
      * - Langganan: null (unlimited)
      */
@@ -83,9 +83,9 @@ final class FiturLangganan
         return match ($versi) {
             VersiLangganan::Gratis => (function (): int {
                 try {
-                    return (int) (config('langganan.batas_produk_gratis') ?? 20);
+                    return (int) (config('langganan.batas_produk_gratis') ?? 5);
                 } catch (\Throwable) {
-                    return 20;
+                    return 5;
                 }
             })(),
             VersiLangganan::Trial, VersiLangganan::Langganan => null,

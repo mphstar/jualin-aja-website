@@ -12,5 +12,6 @@ return [
     | menggunakan paket versi Gratis.
     |
     */
-    'batas_produk_gratis' => 20,
+    'batas_produk_gratis' => 5,
 ];
+

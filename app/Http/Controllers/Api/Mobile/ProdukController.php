@@ -4,13 +4,16 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Api\Mobile;
 
+use App\Actions\Pos\HapusProdukPos;
 use App\Actions\Pos\SimpanProdukPos;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Pos\SimpanProdukRequest;
 use App\Http\Resources\Pos\ProdukResource;
 use App\Models\Produk;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Symfony\Component\HttpFoundation\Response;
 
 class ProdukController extends Controller
 {
@@ -69,5 +72,14 @@ class ProdukController extends Controller
         $this->pastikanMilikToko($request, $produk->pos_user_id);
 
         return new ProdukResource($simpan($this->toko($request), $request->nilai(), $produk));
+    }
+
+    public function destroy(Request $request, Produk $produk, HapusProdukPos $hapus): JsonResponse
+    {
+        $this->pastikanMilikToko($request, $produk->pos_user_id);
+
+        $hapus($this->toko($request), $produk);
+
+        return response()->json(status: Response::HTTP_NO_CONTENT);
     }
 }
