@@ -3,7 +3,9 @@
 declare(strict_types=1);
 
 use App\Enums\JenisAksi;
+use App\Enums\JenisKonten;
 use App\Enums\KategoriEbook;
+use App\Enums\KategoriPrompt;
 use App\Enums\StatusEbook;
 use App\Models\Ebook;
 use App\Models\LogAktivitas;
@@ -28,6 +30,7 @@ it('menyaring katalog menurut kategori dan status', function (): void {
 
 it('menyimpan ebook baru beserta cover dan berkas PDF', function (): void {
     $respons = $this->post('/api/v1/ebook', [
+        'jenis' => JenisKonten::Resep->value,
         'judul' => 'Sambal & Saus Andalan',
         'kategori' => KategoriEbook::BumbuSaus->value,
         'deskripsi' => 'Sambal bawang, matah, ijo, dan saus pendamping yang tahan lama.',
@@ -52,6 +55,7 @@ it('menyimpan ebook baru beserta cover dan berkas PDF', function (): void {
 
 it('menolak berkas yang bukan PDF', function (): void {
     $this->post('/api/v1/ebook', [
+        'jenis' => JenisKonten::Resep->value,
         'judul' => 'Judul Uji',
         'kategori' => KategoriEbook::Snack->value,
         'deskripsi' => 'Deskripsi yang cukup panjang untuk lolos validasi.',
@@ -67,6 +71,7 @@ it('mengganti berkas lama saat ebook diperbarui', function (): void {
     $pathLama = $ebook->cover_path;
 
     $this->post("/api/v1/ebook/{$ebook->id}", [
+        'jenis' => JenisKonten::Resep->value,
         'judul' => $ebook->judul,
         'kategori' => $ebook->kategori->value,
         'deskripsi' => $ebook->deskripsi,
@@ -87,6 +92,7 @@ it('mempertahankan berkas lama bila unggahan baru tidak disertakan', function ()
     $pathAsli = $ebook->berkas_path;
 
     $this->post("/api/v1/ebook/{$ebook->id}", [
+        'jenis' => JenisKonten::Resep->value,
         'judul' => 'Judul Diperbarui',
         'kategori' => $ebook->kategori->value,
         'deskripsi' => $ebook->deskripsi,
@@ -115,6 +121,7 @@ it('mencatat tanggal terbit sekali saja', function (): void {
 it('membuat slug unik meski judulnya sama', function (): void {
     foreach (range(1, 2) as $ke) {
         $this->post('/api/v1/ebook', [
+            'jenis' => JenisKonten::Resep->value,
             'judul' => 'Bumbu Dasar Serbaguna',
             'kategori' => KategoriEbook::BumbuSaus->value,
             'deskripsi' => 'Bumbu dasar merah, putih, dan kuning untuk puluhan menu.',
@@ -162,4 +169,40 @@ it('menghapus ebook beserta berkasnya', function (): void {
 
 it('mengembalikan 404 untuk ebook yang tidak ada', function (): void {
     $this->getJson('/api/v1/ebook/99999')->assertNotFound();
+});
+
+it('menyimpan konten prompt beserta kategori prompt', function (): void {
+    $respons = $this->post('/api/v1/ebook', [
+        'jenis' => JenisKonten::Prompt->value,
+        'judul' => 'Prompt Logo Usaha Kekinian',
+        'kategoriPrompt' => KategoriPrompt::Logo->value,
+        'deskripsi' => 'Prompt siap pakai untuk membuat logo usaha dengan AI, lengkap dengan variasi gaya.',
+        'status' => StatusEbook::Terbit->value,
+    ])->assertCreated();
+
+    $ebook = Ebook::query()->sole();
+
+    expect($ebook->jenis)->toBe(JenisKonten::Prompt)
+        ->and($ebook->kategori)->toBeNull()
+        ->and($ebook->kategori_prompt)->toBe(KategoriPrompt::Logo)
+        ->and($respons->json('jenis'))->toBe(JenisKonten::Prompt->value)
+        ->and($respons->json('kategoriPrompt'))->toBe(KategoriPrompt::Logo->value);
+});
+
+it('menolak konten resep tanpa kategori', function (): void {
+    $this->post('/api/v1/ebook', [
+        'jenis' => JenisKonten::Resep->value,
+        'judul' => 'Resep Tanpa Kategori',
+        'deskripsi' => 'Deskripsi yang cukup panjang untuk lolos validasi.',
+        'status' => StatusEbook::Draf->value,
+    ])->assertStatus(422)->assertJsonValidationErrors(['kategori']);
+});
+
+it('menyaring katalog menurut jenis konten', function (): void {
+    Ebook::factory()->count(2)->create();
+    Ebook::factory()->prompt()->count(3)->create();
+
+    expect($this->getJson('/api/v1/ebook?jenis=RESEP')->assertOk()->json('total'))->toBe(2)
+        ->and($this->getJson('/api/v1/ebook?jenis=PROMPT')->assertOk()->json('total'))->toBe(3)
+        ->and($this->getJson('/api/v1/ebook')->assertOk()->json('total'))->toBe(5);
 });

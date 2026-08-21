@@ -43,25 +43,56 @@ import { SampulEbook } from '@/features/resep/SampulEbook';
 import { api, KesalahanApi } from '@/lib/api';
 import type { MasukanEbook } from '@/lib/api';
 import { formatUkuranFile } from '@/lib/format';
-import { DAFTAR_KATEGORI_EBOOK, LABEL_KATEGORI_EBOOK } from '@/lib/konstanta';
-import type { Ebook, KategoriEbook, StatusEbook } from '@/types';
+import {
+    DAFTAR_JENIS_KONTEN,
+    DAFTAR_KATEGORI_EBOOK,
+    DAFTAR_KATEGORI_PROMPT,
+    LABEL_JENIS_KONTEN,
+    LABEL_KATEGORI_EBOOK,
+    LABEL_KATEGORI_PROMPT,
+} from '@/lib/konstanta';
+import type {
+    Ebook,
+    JenisKonten,
+    KategoriEbook,
+    KategoriPrompt,
+    StatusEbook,
+} from '@/types';
 
 const skema = z.object({
+    jenis: z.enum(['RESEP', 'PROMPT'], {
+        error: 'Jenis konten wajib dipilih.',
+    }),
     judul: z
         .string()
         .min(5, { error: 'Judul minimal 5 karakter.' })
         .max(120, { error: 'Judul maksimal 120 karakter.' }),
-    kategori: z.enum(
-        [
-            'MINUMAN',
-            'MAKANAN_BERAT',
-            'SNACK',
-            'DESSERT',
-            'BAKERY',
-            'BUMBU_SAUS',
-        ],
-        { error: 'Kategori wajib dipilih.' },
-    ),
+    kategori: z
+        .enum(
+            [
+                'MINUMAN',
+                'MAKANAN_BERAT',
+                'SNACK',
+                'DESSERT',
+                'BAKERY',
+                'BUMBU_SAUS',
+            ],
+            { error: 'Kategori wajib dipilih.' },
+        )
+        .optional(),
+    kategoriPrompt: z
+        .enum(
+            [
+                'LOGO',
+                'DESAIN_MENU',
+                'POSTER_PROMOSI',
+                'SOSIAL_MEDIA',
+                'FOTO_PRODUK',
+                'KEMASAN_PRODUK',
+            ],
+            { error: 'Kategori wajib dipilih.' },
+        )
+        .optional(),
     deskripsi: z
         .string()
         .min(20, { error: 'Deskripsi minimal 20 karakter.' })
@@ -73,6 +104,22 @@ const skema = z.object({
             error: 'Jumlah halaman harus lebih dari 0.',
         })
         .optional(),
+}).superRefine((nilai, ctx) => {
+    if (nilai.jenis === 'RESEP' && !nilai.kategori) {
+        ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ['kategori'],
+            error: 'Kategori resep wajib dipilih.',
+        });
+    }
+
+    if (nilai.jenis === 'PROMPT' && !nilai.kategoriPrompt) {
+        ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ['kategoriPrompt'],
+            error: 'Kategori prompt wajib dipilih.',
+        });
+    }
 });
 
 type NilaiForm = z.infer<typeof skema>;
@@ -107,8 +154,10 @@ export function FormEbook({ id }: { id?: string }) {
     const form = useForm<NilaiForm>({
         resolver: zodResolver(skema),
         defaultValues: {
+            jenis: 'RESEP',
             judul: '',
             kategori: 'MINUMAN',
+            kategoriPrompt: 'LOGO',
             deskripsi: '',
             status: 'DRAF',
             jumlahHalaman: '',
@@ -132,8 +181,10 @@ export function FormEbook({ id }: { id?: string }) {
 
                 setEbookLama(ebook);
                 form.reset({
+                    jenis: ebook.jenis,
                     judul: ebook.judul,
                     kategori: ebook.kategori,
+                    kategoriPrompt: ebook.kategoriPrompt,
                     deskripsi: ebook.deskripsi,
                     status: ebook.status,
                     jumlahHalaman: ebook.jumlahHalaman
@@ -171,8 +222,10 @@ export function FormEbook({ id }: { id?: string }) {
     async function kirim(nilai: NilaiForm) {
         setMengirim(true);
         const masukan: MasukanEbook = {
+            jenis: nilai.jenis as JenisKonten,
             judul: nilai.judul.trim(),
-            kategori: nilai.kategori as KategoriEbook,
+            kategori: nilai.kategori as KategoriEbook | undefined,
+            kategoriPrompt: nilai.kategoriPrompt as KategoriPrompt | undefined,
             deskripsi: nilai.deskripsi.trim(),
             status: nilai.status as StatusEbook,
             // Hanya unggahan baru yang dikirim; berkas lama dibiarkan apa adanya
@@ -226,7 +279,11 @@ export function FormEbook({ id }: { id?: string }) {
         );
     }
 
-    const kategoriTerpilih = form.watch('kategori') as KategoriEbook;
+    const jenisTerpilih = form.watch('jenis') as JenisKonten;
+    const kategoriTerpilih = form.watch('kategori') as KategoriEbook | undefined;
+    const kategoriPromptTerpilih = form.watch('kategoriPrompt') as
+        | KategoriPrompt
+        | undefined;
     const judulTerpilih = form.watch('judul');
 
     return (
@@ -262,21 +319,56 @@ export function FormEbook({ id }: { id?: string }) {
                         <Card>
                             <CardHeader>
                                 <CardTitle className="text-base">
-                                    Informasi ebook
+                                    Informasi konten
                                 </CardTitle>
                             </CardHeader>
                             <CardContent className="grid gap-4">
                                 <FormField
                                     control={form.control}
-                                    name="judul"
+                                    name="jenis"
                                     render={({ field }) => (
                                         <FormItem>
-                                            <FormLabel>Judul</FormLabel>
+                                            <FormLabel>Jenis konten</FormLabel>
                                             <FormControl>
-                                                <Input
-                                                    placeholder="Mis. 50 Resep Minuman Kekinian"
-                                                    {...field}
-                                                />
+                                                <RadioGroup
+                                                    value={field.value}
+                                                    onValueChange={(v) => {
+                                                        field.onChange(v);
+                                                        form.setValue(
+                                                            'kategori',
+                                                            v === 'RESEP'
+                                                                ? 'MINUMAN'
+                                                                : undefined,
+                                                        );
+                                                        form.setValue(
+                                                            'kategoriPrompt',
+                                                            v === 'PROMPT'
+                                                                ? 'LOGO'
+                                                                : undefined,
+                                                        );
+                                                    }}
+                                                    className="flex gap-2"
+                                                >
+                                                    {DAFTAR_JENIS_KONTEN.map(
+                                                        (j) => (
+                                                            <Label
+                                                                key={j}
+                                                                htmlFor={`jenis-${j}`}
+                                                                className="flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-md border p-3 font-normal hover:bg-accent has-[[data-state=checked]]:border-primary"
+                                                            >
+                                                                <RadioGroupItem
+                                                                    value={j}
+                                                                    id={`jenis-${j}`}
+                                                                />
+                                                                {
+                                                                    LABEL_JENIS_KONTEN[
+                                                                        j
+                                                                    ]
+                                                                }
+                                                            </Label>
+                                                        ),
+                                                    )}
+                                                </RadioGroup>
                                             </FormControl>
                                             <FormMessage />
                                         </FormItem>
@@ -285,40 +377,105 @@ export function FormEbook({ id }: { id?: string }) {
 
                                 <FormField
                                     control={form.control}
-                                    name="kategori"
+                                    name="judul"
                                     render={({ field }) => (
                                         <FormItem>
-                                            <FormLabel>Kategori</FormLabel>
-                                            <Select
-                                                value={field.value}
-                                                onValueChange={field.onChange}
-                                            >
-                                                <FormControl>
-                                                    <SelectTrigger className="w-full">
-                                                        <SelectValue />
-                                                    </SelectTrigger>
-                                                </FormControl>
-                                                <SelectContent>
-                                                    {DAFTAR_KATEGORI_EBOOK.map(
-                                                        (k) => (
-                                                            <SelectItem
-                                                                key={k}
-                                                                value={k}
-                                                            >
-                                                                {
-                                                                    LABEL_KATEGORI_EBOOK[
-                                                                        k
-                                                                    ]
-                                                                }
-                                                            </SelectItem>
-                                                        ),
-                                                    )}
-                                                </SelectContent>
-                                            </Select>
+                                            <FormLabel>Judul</FormLabel>
+                                            <FormControl>
+                                                <Input
+                                                    placeholder={
+                                                        jenisTerpilih ===
+                                                        'PROMPT'
+                                                            ? 'Mis. Prompt Logo Usaha Kekinian'
+                                                            : 'Mis. 50 Resep Minuman Kekinian'
+                                                    }
+                                                    {...field}
+                                                />
+                                            </FormControl>
                                             <FormMessage />
                                         </FormItem>
                                     )}
                                 />
+
+                                {jenisTerpilih === 'PROMPT' ? (
+                                    <FormField
+                                        control={form.control}
+                                        name="kategoriPrompt"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel>Kategori</FormLabel>
+                                                <Select
+                                                    value={field.value}
+                                                    onValueChange={
+                                                        field.onChange
+                                                    }
+                                                >
+                                                    <FormControl>
+                                                        <SelectTrigger className="w-full">
+                                                            <SelectValue />
+                                                        </SelectTrigger>
+                                                    </FormControl>
+                                                    <SelectContent>
+                                                        {DAFTAR_KATEGORI_PROMPT.map(
+                                                            (k) => (
+                                                                <SelectItem
+                                                                    key={k}
+                                                                    value={k}
+                                                                >
+                                                                    {
+                                                                        LABEL_KATEGORI_PROMPT[
+                                                                            k
+                                                                        ]
+                                                                    }
+                                                                </SelectItem>
+                                                            ),
+                                                        )}
+                                                    </SelectContent>
+                                                </Select>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+                                ) : (
+                                    <FormField
+                                        control={form.control}
+                                        name="kategori"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel>Kategori</FormLabel>
+                                                <Select
+                                                    value={field.value}
+                                                    onValueChange={
+                                                        field.onChange
+                                                    }
+                                                >
+                                                    <FormControl>
+                                                        <SelectTrigger className="w-full">
+                                                            <SelectValue />
+                                                        </SelectTrigger>
+                                                    </FormControl>
+                                                    <SelectContent>
+                                                        {DAFTAR_KATEGORI_EBOOK.map(
+                                                            (k) => (
+                                                                <SelectItem
+                                                                    key={k}
+                                                                    value={k}
+                                                                >
+                                                                    {
+                                                                        LABEL_KATEGORI_EBOOK[
+                                                                            k
+                                                                        ]
+                                                                    }
+                                                                </SelectItem>
+                                                            ),
+                                                        )}
+                                                    </SelectContent>
+                                                </Select>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+                                )}
 
                                 <FormField
                                     control={form.control}
@@ -495,16 +652,18 @@ export function FormEbook({ id }: { id?: string }) {
                             <CardContent className="space-y-3">
                                 <div className="aspect-[16/10] overflow-hidden rounded-md border">
                                     <SampulEbook
+                                        jenis={jenisTerpilih}
                                         kategori={kategoriTerpilih}
+                                        kategoriPrompt={kategoriPromptTerpilih}
                                         coverUrl={
                                             cover?.url ?? ebookLama?.coverUrl
                                         }
-                                        judul={judulTerpilih || 'Ebook baru'}
+                                        judul={judulTerpilih || 'Konten baru'}
                                     />
                                 </div>
                                 <p className="line-clamp-2 text-sm font-medium">
                                     {judulTerpilih ||
-                                        'Judul ebook akan muncul di sini'}
+                                        'Judul konten akan muncul di sini'}
                                 </p>
                             </CardContent>
                         </Card>

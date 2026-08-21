@@ -34,9 +34,14 @@ import { useDebounce } from '@/hooks/useDebounce';
 import { KesalahanApi } from '@/lib/api';
 import { formatAngka } from '@/lib/format';
 import {
+    DAFTAR_JENIS_KONTEN,
     DAFTAR_KATEGORI_EBOOK,
+    DAFTAR_KATEGORI_PROMPT,
+    LABEL_JENIS_KONTEN,
     LABEL_KATEGORI_EBOOK,
+    LABEL_KATEGORI_PROMPT,
     LABEL_STATUS_EBOOK,
+    labelKategoriKonten,
 } from '@/lib/konstanta';
 import { useEbookStore } from '@/stores/ebookStore';
 import type { Ebook, StatusEbook } from '@/types';
@@ -49,7 +54,9 @@ function BarisEbookRingkas({ ebook, aksi }: { ebook: Ebook; aksi: AksiEbook }) {
         <div className="flex gap-3">
             <div className="h-14 w-20 shrink-0 overflow-hidden rounded">
                 <SampulEbook
+                    jenis={ebook.jenis}
                     kategori={ebook.kategori}
+                    kategoriPrompt={ebook.kategoriPrompt}
                     coverUrl={ebook.coverUrl}
                     judul={ebook.judul}
                     className="gap-0 p-1 [&>span]:hidden"
@@ -63,7 +70,12 @@ function BarisEbookRingkas({ ebook, aksi }: { ebook: Ebook; aksi: AksiEbook }) {
                     {ebook.judul}
                 </Link>
                 <p className="mt-0.5 text-xs text-muted-foreground">
-                    {LABEL_KATEGORI_EBOOK[ebook.kategori]} ·{' '}
+                    {labelKategoriKonten(
+                        ebook.jenis,
+                        ebook.kategori,
+                        ebook.kategoriPrompt,
+                    )}{' '}
+                    ·{' '}
                     <span className="angka-tabular">
                         {formatAngka(ebook.jumlahUnduhan)} unduhan
                     </span>
@@ -133,7 +145,9 @@ export function HalamanKatalog() {
 
     const adaFilter =
         (filter.cari ?? '') !== '' ||
+        filter.jenis !== 'SEMUA' ||
         filter.kategori !== 'SEMUA' ||
+        filter.kategoriPrompt !== 'SEMUA' ||
         filter.status !== 'SEMUA';
 
     async function jalankanHapus() {
@@ -169,9 +183,39 @@ export function HalamanKatalog() {
             </div>
 
             <Select
-                value={filter.kategori ?? 'SEMUA'}
+                value={filter.jenis ?? 'SEMUA'}
+                onValueChange={(v) => {
+                    const jenis = v as typeof filter.jenis;
+                    setFilter({
+                        jenis,
+                        kategori: 'SEMUA',
+                        kategoriPrompt: 'SEMUA',
+                    });
+                }}
+            >
+                <SelectTrigger className="w-full sm:w-[140px]">
+                    <SelectValue placeholder="Jenis" />
+                </SelectTrigger>
+                <SelectContent>
+                    <SelectItem value="SEMUA">Semua jenis</SelectItem>
+                    {DAFTAR_JENIS_KONTEN.map((j) => (
+                        <SelectItem key={j} value={j}>
+                            {LABEL_JENIS_KONTEN[j]}
+                        </SelectItem>
+                    ))}
+                </SelectContent>
+            </Select>
+
+            <Select
+                value={
+                    filter.jenis === 'PROMPT'
+                        ? (filter.kategoriPrompt ?? 'SEMUA')
+                        : (filter.kategori ?? 'SEMUA')
+                }
                 onValueChange={(v) =>
-                    setFilter({ kategori: v as typeof filter.kategori })
+                    filter.jenis === 'PROMPT'
+                        ? setFilter({ kategoriPrompt: v as typeof filter.kategoriPrompt })
+                        : setFilter({ kategori: v as typeof filter.kategori })
                 }
             >
                 <SelectTrigger className="w-full sm:w-[180px]">
@@ -179,11 +223,17 @@ export function HalamanKatalog() {
                 </SelectTrigger>
                 <SelectContent>
                     <SelectItem value="SEMUA">Semua kategori</SelectItem>
-                    {DAFTAR_KATEGORI_EBOOK.map((k) => (
-                        <SelectItem key={k} value={k}>
-                            {LABEL_KATEGORI_EBOOK[k]}
-                        </SelectItem>
-                    ))}
+                    {filter.jenis === 'PROMPT'
+                        ? DAFTAR_KATEGORI_PROMPT.map((k) => (
+                              <SelectItem key={k} value={k}>
+                                  {LABEL_KATEGORI_PROMPT[k]}
+                              </SelectItem>
+                          ))
+                        : DAFTAR_KATEGORI_EBOOK.map((k) => (
+                              <SelectItem key={k} value={k}>
+                                  {LABEL_KATEGORI_EBOOK[k]}
+                              </SelectItem>
+                          ))}
                 </SelectContent>
             </Select>
 
@@ -246,12 +296,12 @@ export function HalamanKatalog() {
     return (
         <>
             <PageHeader
-                judul="Master Data Resep"
-                keterangan="Katalog ebook resep yang bisa diunduh pelanggan dengan langganan aktif."
+                judul="Pustaka"
+                keterangan="Katalog resep dan prompt berbentuk PDF yang bisa dibuka pelanggan dengan langganan aktif."
                 aksi={
                     <Button onClick={() => router.visit('/resep/baru')}>
                         <PlusIcon className="size-4" />
-                        Tambah ebook
+                        Tambah konten
                     </Button>
                 }
             />

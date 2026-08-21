@@ -3,12 +3,17 @@ import { api, KesalahanApi } from '@/lib/api';
 import type { ParamsEbook } from '@/lib/api';
 import type { Ebook, StatusEbook } from '@/types';
 
-type Filter = Pick<ParamsEbook, 'cari' | 'kategori' | 'status'>;
+type Filter = Pick<
+    ParamsEbook,
+    'cari' | 'jenis' | 'kategori' | 'kategoriPrompt' | 'status'
+>;
 type Tampilan = 'grid' | 'tabel';
 
 const FILTER_AWAL: Filter = {
     cari: '',
+    jenis: 'SEMUA',
     kategori: 'SEMUA',
+    kategoriPrompt: 'SEMUA',
     status: 'SEMUA',
 };
 

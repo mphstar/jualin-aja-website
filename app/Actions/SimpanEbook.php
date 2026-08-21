@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace App\Actions;
 
 use App\Enums\JenisAksi;
+use App\Enums\JenisKonten;
 use App\Enums\KategoriEbook;
+use App\Enums\KategoriPrompt;
 use App\Enums\StatusEbook;
 use App\Enums\TargetAksi;
 use App\Models\Ebook;
@@ -27,8 +29,10 @@ final readonly class SimpanEbook
 
     public function __invoke(
         ?Ebook $ebook,
+        JenisKonten $jenis,
         string $judul,
-        KategoriEbook $kategori,
+        ?KategoriEbook $kategori,
+        ?KategoriPrompt $kategoriPrompt,
         string $deskripsi,
         StatusEbook $status,
         ?UploadedFile $cover = null,
@@ -39,9 +43,11 @@ final readonly class SimpanEbook
         $statusLama = $ebook?->status;
 
         $atribut = [
+            'jenis' => $jenis,
             'judul' => $judul,
             'slug' => $this->slugUnik($judul, $ebook?->id),
             'kategori' => $kategori,
+            'kategori_prompt' => $kategoriPrompt,
             'deskripsi' => $deskripsi,
             'status' => $status,
         ];

@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace Database\Factories;
 
+use App\Enums\JenisKonten;
 use App\Enums\KategoriEbook;
+use App\Enums\KategoriPrompt;
 use App\Enums\StatusEbook;
 use App\Models\Ebook;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -25,7 +27,9 @@ class EbookFactory extends Factory
         return [
             'judul' => $judul,
             'slug' => Str::slug($judul).'-'.fake()->unique()->numerify('####'),
+            'jenis' => JenisKonten::Resep,
             'kategori' => fake()->randomElement(KategoriEbook::cases()),
+            'kategori_prompt' => null,
             'deskripsi' => fake()->paragraph(),
             'cover_path' => null,
             'berkas_path' => null,
@@ -36,6 +40,15 @@ class EbookFactory extends Factory
             'tanggal_terbit' => fake()->dateTimeBetween('-1 year', 'now'),
             'jumlah_unduhan' => 0,
         ];
+    }
+
+    public function prompt(): static
+    {
+        return $this->state(fn (array $attributes): array => [
+            'jenis' => JenisKonten::Prompt,
+            'kategori' => null,
+            'kategori_prompt' => fake()->randomElement(KategoriPrompt::cases()),
+        ]);
     }
 
     public function draf(): static

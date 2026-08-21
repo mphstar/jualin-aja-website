@@ -6,7 +6,7 @@ import { FormEbook } from '@/features/resep/FormEbook';
 export default function FormResep({ id }: { id?: string }) {
     return (
         <>
-            <Head title={id ? 'Ubah Ebook' : 'Ebook Baru'} />
+            <Head title={id ? 'Ubah Konten' : 'Konten Baru'} />
             <FormEbook id={id} />
         </>
     );

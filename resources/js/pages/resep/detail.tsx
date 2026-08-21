@@ -5,7 +5,7 @@ import { HalamanDetailEbook } from '@/features/resep/HalamanDetailEbook';
 export default function DetailResep({ id }: { id: string }) {
     return (
         <>
-            <Head title="Detail Ebook" />
+            <Head title="Detail Konten" />
             <HalamanDetailEbook id={id} />
         </>
     );

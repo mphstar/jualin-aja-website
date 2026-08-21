@@ -38,8 +38,16 @@ class EbookController extends Controller
             });
         }
 
+        if (($jenis = $request->jenis()) !== null) {
+            $query->where('jenis', $jenis->value);
+        }
+
         if (($kategori = $request->kategori()) !== null) {
             $query->where('kategori', $kategori->value);
+        }
+
+        if (($kategoriPrompt = $request->kategoriPrompt()) !== null) {
+            $query->where('kategori_prompt', $kategoriPrompt->value);
         }
 
         if (($status = $request->status()) !== null) {
@@ -79,8 +87,10 @@ class EbookController extends Controller
     {
         return new EbookResource($simpan(
             ebook: null,
+            jenis: $request->jenis(),
             judul: (string) $request->string('judul'),
             kategori: $request->kategori(),
+            kategoriPrompt: $request->kategoriPrompt(),
             deskripsi: (string) $request->string('deskripsi'),
             status: $request->status(),
             cover: $request->cover(),
@@ -93,8 +103,10 @@ class EbookController extends Controller
     {
         return new EbookResource($simpan(
             ebook: $ebook,
+            jenis: $request->jenis(),
             judul: (string) $request->string('judul'),
             kategori: $request->kategori(),
+            kategoriPrompt: $request->kategoriPrompt(),
             deskripsi: (string) $request->string('deskripsi'),
             status: $request->status(),
             cover: $request->cover(),

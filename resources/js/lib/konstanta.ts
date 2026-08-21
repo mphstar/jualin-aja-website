@@ -1,8 +1,10 @@
 import type {
     DurasiPaket,
     JenisAksi,
+    JenisKonten,
     JenisUsaha,
     KategoriEbook,
+    KategoriPrompt,
     MetodePembayaran,
     StatusEbook,
     StatusLangganan,
@@ -96,6 +98,20 @@ export const LABEL_KATEGORI_EBOOK: Record<KategoriEbook, string> = {
     BUMBU_SAUS: 'Bumbu & Saus',
 };
 
+export const LABEL_KATEGORI_PROMPT: Record<KategoriPrompt, string> = {
+    LOGO: 'Logo',
+    DESAIN_MENU: 'Desain Menu',
+    POSTER_PROMOSI: 'Poster Promosi',
+    SOSIAL_MEDIA: 'Sosial Media',
+    FOTO_PRODUK: 'Foto Produk',
+    KEMASAN_PRODUK: 'Kemasan Produk',
+};
+
+export const LABEL_JENIS_KONTEN: Record<JenisKonten, string> = {
+    RESEP: 'Resep',
+    PROMPT: 'Prompt',
+};
+
 export const LABEL_STATUS_EBOOK: Record<StatusEbook, string> = {
     DRAF: 'Draf',
     TERBIT: 'Terbit',
@@ -134,6 +150,12 @@ export const DAFTAR_STATUS_LANGGANAN = Object.keys(
 export const DAFTAR_KATEGORI_EBOOK = Object.keys(
     LABEL_KATEGORI_EBOOK,
 ) as KategoriEbook[];
+export const DAFTAR_KATEGORI_PROMPT = Object.keys(
+    LABEL_KATEGORI_PROMPT,
+) as KategoriPrompt[];
+export const DAFTAR_JENIS_KONTEN = Object.keys(
+    LABEL_JENIS_KONTEN,
+) as JenisKonten[];
 export const DAFTAR_JENIS_USAHA = Object.keys(
     LABEL_JENIS_USAHA,
 ) as JenisUsaha[];
@@ -144,3 +166,21 @@ export const DAFTAR_METODE_PEMBAYARAN = Object.keys(
     LABEL_METODE_PEMBAYARAN,
 ) as MetodePembayaran[];
 export const DAFTAR_AKSI = Object.keys(LABEL_AKSI) as JenisAksi[];
+
+/**
+ * Label kategori sesuai jenis konten. Prompt memakai kategori sendiri yang
+ * tidak relevan untuk resep dan sebaliknya.
+ */
+export function labelKategoriKonten(
+    jenis: JenisKonten,
+    kategori?: KategoriEbook,
+    kategoriPrompt?: KategoriPrompt,
+): string {
+    return jenis === 'PROMPT'
+        ? kategoriPrompt
+            ? LABEL_KATEGORI_PROMPT[kategoriPrompt]
+            : 'Prompt'
+        : kategori
+          ? LABEL_KATEGORI_EBOOK[kategori]
+          : 'Resep';
+}

@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace App\Http\Requests;
 
+use App\Enums\JenisKonten;
 use App\Enums\KategoriEbook;
+use App\Enums\KategoriPrompt;
 use App\Enums\StatusEbook;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\UploadedFile;
@@ -24,8 +26,18 @@ class SimpanEbookRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'jenis' => ['required', Rule::enum(JenisKonten::class)],
             'judul' => ['required', 'string', 'min:3', 'max:180'],
-            'kategori' => ['required', Rule::enum(KategoriEbook::class)],
+            'kategori' => [
+                'required_if:jenis,RESEP',
+                'nullable',
+                Rule::enum(KategoriEbook::class),
+            ],
+            'kategoriPrompt' => [
+                'required_if:jenis,PROMPT',
+                'nullable',
+                Rule::enum(KategoriPrompt::class),
+            ],
             'deskripsi' => ['required', 'string', 'min:10', 'max:2000'],
             'status' => ['required', Rule::enum(StatusEbook::class)],
             'jumlahHalaman' => ['nullable', 'integer', 'min:1', 'max:5000'],
@@ -49,9 +61,27 @@ class SimpanEbookRequest extends FormRequest
         ];
     }
 
-    public function kategori(): KategoriEbook
+    public function jenis(): JenisKonten
     {
-        return KategoriEbook::from((string) $this->string('kategori'));
+        return JenisKonten::from((string) $this->string('jenis'));
+    }
+
+    public function kategori(): ?KategoriEbook
+    {
+        if ($this->filled('kategori')) {
+            return KategoriEbook::from((string) $this->string('kategori'));
+        }
+
+        return null;
+    }
+
+    public function kategoriPrompt(): ?KategoriPrompt
+    {
+        if ($this->filled('kategoriPrompt')) {
+            return KategoriPrompt::from((string) $this->string('kategoriPrompt'));
+        }
+
+        return null;
     }
 
     public function status(): StatusEbook

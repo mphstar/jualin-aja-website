@@ -1,12 +1,15 @@
-import { BookOpenIcon } from 'lucide-react';
-import { LABEL_KATEGORI_EBOOK } from '@/lib/konstanta';
+import { BookOpenIcon, SparklesIcon } from 'lucide-react';
+import {
+    LABEL_KATEGORI_EBOOK,
+    LABEL_KATEGORI_PROMPT,
+} from '@/lib/konstanta';
 import { cn } from '@/lib/utils';
-import type { KategoriEbook } from '@/types';
+import type { JenisKonten, KategoriEbook, KategoriPrompt } from '@/types';
 
 /**
- * Sampul ebook. Karena data mock belum punya berkas gambar, tiap kategori
- * mendapat warna tetap — katalog tetap terbaca sebagai katalog, bukan
- * deretan kotak abu-abu yang sama semua.
+ * Sampul konten pustaka. Karena data belum tentu punya berkas gambar, tiap
+ * kategori mendapat warna tetap — katalog tetap terbaca sebagai katalog,
+ * bukan deretan kotak abu-abu yang sama semua.
  */
 const WARNA_KATEGORI: Record<KategoriEbook, string> = {
     MINUMAN: 'from-sky-500/25 to-sky-500/5 text-sky-700 dark:text-sky-300',
@@ -19,13 +22,31 @@ const WARNA_KATEGORI: Record<KategoriEbook, string> = {
         'from-emerald-500/25 to-emerald-500/5 text-emerald-700 dark:text-emerald-300',
 };
 
+const WARNA_KATEGORI_PROMPT: Record<KategoriPrompt, string> = {
+    LOGO: 'from-indigo-500/25 to-indigo-500/5 text-indigo-700 dark:text-indigo-300',
+    DESAIN_MENU:
+        'from-teal-500/25 to-teal-500/5 text-teal-700 dark:text-teal-300',
+    POSTER_PROMOSI:
+        'from-rose-500/25 to-rose-500/5 text-rose-700 dark:text-rose-300',
+    SOSIAL_MEDIA:
+        'from-cyan-500/25 to-cyan-500/5 text-cyan-700 dark:text-cyan-300',
+    FOTO_PRODUK:
+        'from-lime-500/25 to-lime-500/5 text-lime-700 dark:text-lime-300',
+    KEMASAN_PRODUK:
+        'from-fuchsia-500/25 to-fuchsia-500/5 text-fuchsia-700 dark:text-fuchsia-300',
+};
+
 export function SampulEbook({
+    jenis,
     kategori,
+    kategoriPrompt,
     coverUrl,
     judul,
     className,
 }: {
-    kategori: KategoriEbook;
+    jenis: JenisKonten;
+    kategori?: KategoriEbook;
+    kategoriPrompt?: KategoriPrompt;
     coverUrl?: string;
     judul: string;
     className?: string;
@@ -40,18 +61,36 @@ export function SampulEbook({
         );
     }
 
+    const prompt = jenis === 'PROMPT';
+    const label = prompt
+        ? kategoriPrompt
+            ? LABEL_KATEGORI_PROMPT[kategoriPrompt]
+            : 'Prompt'
+        : kategori
+          ? LABEL_KATEGORI_EBOOK[kategori]
+          : 'Resep';
+    const warna = prompt
+        ? kategoriPrompt
+            ? WARNA_KATEGORI_PROMPT[kategoriPrompt]
+            : 'from-slate-500/25 to-slate-500/5 text-slate-700 dark:text-slate-300'
+        : kategori
+          ? WARNA_KATEGORI[kategori]
+          : 'from-slate-500/25 to-slate-500/5 text-slate-700 dark:text-slate-300';
+
     return (
         <div
             className={cn(
                 'flex h-full w-full flex-col items-center justify-center gap-2 bg-gradient-to-br p-4 text-center',
-                WARNA_KATEGORI[kategori],
+                warna,
                 className,
             )}
         >
-            <BookOpenIcon className="size-7 opacity-70" />
-            <span className="text-xs font-medium opacity-80">
-                {LABEL_KATEGORI_EBOOK[kategori]}
-            </span>
+            {prompt ? (
+                <SparklesIcon className="size-7 opacity-70" />
+            ) : (
+                <BookOpenIcon className="size-7 opacity-70" />
+            )}
+            <span className="text-xs font-medium opacity-80">{label}</span>
         </div>
     );
 }

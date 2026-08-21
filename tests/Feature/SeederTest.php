@@ -102,9 +102,9 @@ it('menyegarkan kolom ringkasan langganan tiap toko', function (): void {
     }
 });
 
-it('mengisi katalog dengan 12 ebook dan riwayat unduhannya', function (): void {
-    expect(Ebook::query()->count())->toBe(12)
-        ->and(Ebook::query()->where('status', StatusEbook::Terbit->value)->count())->toBe(9)
+it('mengisi katalog dengan 18 konten dan riwayat unduhannya', function (): void {
+    expect(Ebook::query()->count())->toBe(18)
+        ->and(Ebook::query()->where('status', StatusEbook::Terbit->value)->count())->toBe(15)
         // Draf belum pernah terbit, jadi tidak boleh punya unduhan.
         ->and(Ebook::query()->where('status', StatusEbook::Draf->value)->sum('jumlah_unduhan'))->toBe(0);
 

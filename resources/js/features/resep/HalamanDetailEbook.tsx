@@ -45,7 +45,7 @@ import {
     formatUkuranFile,
     formatWaktu,
 } from '@/lib/format';
-import { LABEL_KATEGORI_EBOOK } from '@/lib/konstanta';
+import { labelKategoriKonten } from '@/lib/konstanta';
 
 const KONFIG_GRAFIK = {
     nilai: { label: 'Unduhan', color: 'var(--chart-1)' },
@@ -151,7 +151,9 @@ export function HalamanDetailEbook({ id }: { id: string }) {
                 <div className="flex min-w-0 gap-4">
                     <div className="hidden h-24 w-36 shrink-0 overflow-hidden rounded-lg border sm:block">
                         <SampulEbook
+                            jenis={ebook.jenis}
                             kategori={ebook.kategori}
+                            kategoriPrompt={ebook.kategoriPrompt}
                             coverUrl={ebook.coverUrl}
                             judul={ebook.judul}
                         />
@@ -161,7 +163,11 @@ export function HalamanDetailEbook({ id }: { id: string }) {
                             {ebook.judul}
                         </h1>
                         <p className="mt-1 text-sm text-muted-foreground">
-                            {LABEL_KATEGORI_EBOOK[ebook.kategori]}
+                            {labelKategoriKonten(
+                                ebook.jenis,
+                                ebook.kategori,
+                                ebook.kategoriPrompt,
+                            )}
                         </p>
                         <div className="mt-2">
                             <BadgeStatusEbook status={ebook.status} />

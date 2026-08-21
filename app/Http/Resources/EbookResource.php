@@ -23,9 +23,11 @@ class EbookResource extends JsonResource
     {
         return [
             'id' => (string) $this->id,
+            'jenis' => $this->jenis->value,
             'judul' => $this->judul,
             'slug' => $this->slug,
-            'kategori' => $this->kategori->value,
+            'kategori' => $this->kategori?->value,
+            'kategoriPrompt' => $this->kategori_prompt?->value,
             'deskripsi' => $this->deskripsi,
             'coverUrl' => $this->coverUrl(),
             'fileUrl' => $this->berkasUrl(),

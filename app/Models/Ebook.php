@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Enums\JenisKonten;
 use App\Enums\KategoriEbook;
+use App\Enums\KategoriPrompt;
 use App\Enums\StatusEbook;
 use Database\Factories\EbookFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -16,9 +18,11 @@ use Illuminate\Support\Facades\Storage;
 
 /**
  * @property int $id
+ * @property JenisKonten $jenis
  * @property string $judul
  * @property string $slug
- * @property KategoriEbook $kategori
+ * @property KategoriEbook|null $kategori
+ * @property KategoriPrompt|null $kategori_prompt
  * @property string $deskripsi
  * @property string|null $cover_path
  * @property string|null $berkas_path
@@ -31,7 +35,7 @@ use Illuminate\Support\Facades\Storage;
  * @property Carbon $created_at
  */
 #[Fillable([
-    'judul', 'slug', 'kategori', 'deskripsi', 'cover_path', 'berkas_path',
+    'jenis', 'judul', 'slug', 'kategori', 'kategori_prompt', 'deskripsi', 'cover_path', 'berkas_path',
     'nama_berkas', 'ukuran_berkas_bytes', 'jumlah_halaman', 'status',
     'tanggal_terbit', 'jumlah_unduhan',
 ])]
@@ -46,7 +50,9 @@ class Ebook extends Model
     protected function casts(): array
     {
         return [
+            'jenis' => JenisKonten::class,
             'kategori' => KategoriEbook::class,
+            'kategori_prompt' => KategoriPrompt::class,
             'status' => StatusEbook::class,
             'tanggal_terbit' => 'datetime',
             'ukuran_berkas_bytes' => 'integer',

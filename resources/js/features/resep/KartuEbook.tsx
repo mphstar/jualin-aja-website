@@ -6,7 +6,7 @@ import { AksiEbookMenu } from '@/features/resep/AksiEbookMenu';
 import type { AksiEbook } from '@/features/resep/AksiEbookMenu';
 import { SampulEbook } from '@/features/resep/SampulEbook';
 import { formatAngka, formatTanggal, formatUkuranFile } from '@/lib/format';
-import { LABEL_KATEGORI_EBOOK } from '@/lib/konstanta';
+import { labelKategoriKonten } from '@/lib/konstanta';
 import type { Ebook } from '@/types';
 
 export function KartuEbook({ ebook, aksi }: { ebook: Ebook; aksi: AksiEbook }) {
@@ -19,7 +19,9 @@ export function KartuEbook({ ebook, aksi }: { ebook: Ebook; aksi: AksiEbook }) {
                 className="block aspect-[16/10] overflow-hidden"
             >
                 <SampulEbook
+                    jenis={ebook.jenis}
                     kategori={ebook.kategori}
+                    kategoriPrompt={ebook.kategoriPrompt}
                     coverUrl={ebook.coverUrl}
                     judul={ebook.judul}
                 />
@@ -35,7 +37,11 @@ export function KartuEbook({ ebook, aksi }: { ebook: Ebook; aksi: AksiEbook }) {
                             {ebook.judul}
                         </Link>
                         <p className="mt-1 text-xs text-muted-foreground">
-                            {LABEL_KATEGORI_EBOOK[ebook.kategori]}
+                            {labelKategoriKonten(
+                                ebook.jenis,
+                                ebook.kategori,
+                                ebook.kategoriPrompt,
+                            )}
                         </p>
                     </div>
 

@@ -2,7 +2,9 @@ import { ambil, hapus, kirim, keFormData, tambal } from '@/lib/api/client';
 import type {
     Ebook,
     Halaman,
+    JenisKonten,
     KategoriEbook,
+    KategoriPrompt,
     ParamsHalaman,
     StatusEbook,
     TitikDeret,
@@ -10,7 +12,9 @@ import type {
 } from '@/types';
 
 export interface ParamsEbook extends ParamsHalaman {
+    jenis?: JenisKonten | 'SEMUA';
     kategori?: KategoriEbook | 'SEMUA';
+    kategoriPrompt?: KategoriPrompt | 'SEMUA';
     status?: StatusEbook | 'SEMUA';
 }
 
@@ -20,8 +24,10 @@ export interface ParamsEbook extends ParamsHalaman {
  * halaman dimuat ulang.
  */
 export interface MasukanEbook {
+    jenis: JenisKonten;
     judul: string;
-    kategori: KategoriEbook;
+    kategori?: KategoriEbook;
+    kategoriPrompt?: KategoriPrompt;
     deskripsi: string;
     status: StatusEbook;
     jumlahHalaman?: number;

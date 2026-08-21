@@ -35,7 +35,9 @@ class EbookSeeder extends Seeder
             Ebook::query()->create([
                 'judul' => $data['judul'],
                 'slug' => Str::slug($data['judul']),
+                'jenis' => $data['jenis'],
                 'kategori' => $data['kategori'],
+                'kategori_prompt' => $data['kategoriPrompt'],
                 'deskripsi' => $data['deskripsi'],
                 'nama_berkas' => Str::slug($data['judul']).'.pdf',
                 'ukuran_berkas_bytes' => $acak->bulat(3, 24) * 1024 * 1024,

@@ -26,6 +26,16 @@ export type MetodePembayaran =
 export type KategoriEbook =
     'MINUMAN' | 'MAKANAN_BERAT' | 'SNACK' | 'DESSERT' | 'BAKERY' | 'BUMBU_SAUS';
 
+export type KategoriPrompt =
+    | 'LOGO'
+    | 'DESAIN_MENU'
+    | 'POSTER_PROMOSI'
+    | 'SOSIAL_MEDIA'
+    | 'FOTO_PRODUK'
+    | 'KEMASAN_PRODUK';
+
+export type JenisKonten = 'RESEP' | 'PROMPT';
+
 export type StatusEbook = 'DRAF' | 'TERBIT';
 
 export type JenisUsaha =
@@ -107,9 +117,11 @@ export interface Pembayaran {
 
 export interface Ebook {
     id: string;
+    jenis: JenisKonten;
     judul: string;
     slug: string;
-    kategori: KategoriEbook;
+    kategori?: KategoriEbook;
+    kategoriPrompt?: KategoriPrompt;
     deskripsi: string;
     coverUrl?: string;
     fileUrl?: string;

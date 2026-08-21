@@ -5,7 +5,7 @@ import { AksiEbookMenu } from '@/features/resep/AksiEbookMenu';
 import type { AksiEbook } from '@/features/resep/AksiEbookMenu';
 import { SampulEbook } from '@/features/resep/SampulEbook';
 import { formatAngka, formatTanggal, formatUkuranFile } from '@/lib/format';
-import { LABEL_KATEGORI_EBOOK } from '@/lib/konstanta';
+import { labelKategoriKonten } from '@/lib/konstanta';
 import type { Ebook } from '@/types';
 
 export function buatKolomEbook(aksi: AksiEbook): ColumnDef<Ebook, unknown>[] {
@@ -17,7 +17,9 @@ export function buatKolomEbook(aksi: AksiEbook): ColumnDef<Ebook, unknown>[] {
                 <div className="flex max-w-[320px] items-center gap-3">
                     <div className="h-10 w-14 shrink-0 overflow-hidden rounded">
                         <SampulEbook
+                            jenis={row.original.jenis}
                             kategori={row.original.kategori}
+                            kategoriPrompt={row.original.kategoriPrompt}
                             coverUrl={row.original.coverUrl}
                             judul={row.original.judul}
                             className="gap-0 p-1 [&>span]:hidden"
@@ -31,7 +33,11 @@ export function buatKolomEbook(aksi: AksiEbook): ColumnDef<Ebook, unknown>[] {
                             {row.original.judul}
                         </Link>
                         <p className="text-xs text-muted-foreground">
-                            {LABEL_KATEGORI_EBOOK[row.original.kategori]}
+                            {labelKategoriKonten(
+                                row.original.jenis,
+                                row.original.kategori,
+                                row.original.kategoriPrompt,
+                            )}
                         </p>
                     </div>
                 </div>

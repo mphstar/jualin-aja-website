@@ -5,7 +5,7 @@ import { HalamanKatalog } from '@/features/resep/HalamanKatalog';
 export default function Resep() {
     return (
         <>
-            <Head title="Resep" />
+            <Head title="Pustaka" />
             <HalamanKatalog />
         </>
     );
