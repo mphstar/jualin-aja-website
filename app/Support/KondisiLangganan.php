@@ -45,9 +45,14 @@ final class KondisiLangganan
      * Urutan penilaian menentukan hasil dan tidak boleh ditukar:
      *   ditangguhkan → NONAKTIF (override, menang atas semua)
      *   tidak punya langganan / sudah lewat → KEDALUWARSA
+     *   sumber trial (masih berlaku) → TRIAL  ← TANPA cek sisa hari
      *   sisa ≤ 7 hari → AKAN_BERAKHIR
-     *   sumber trial → TRIAL
      *   selain itu → AKTIF
+     *
+     * Sumber trial diperiksa SEBELUM ambang "akan berakhir" karena masa uji coba
+     * baru hanya 3 hari — pasti jatuh di bawah ambang. Kalau dibalik, akun trial
+     * langsung dianggap AKAN_BERAKHIR, lalu dipetakan `versiDariStatus` menjadi
+     * Langganan dan boleh membuka Pustaka.
      */
     public static function status(
         ?CarbonInterface $tanggalBerakhir,
@@ -69,12 +74,12 @@ final class KondisiLangganan
             return StatusLangganan::Kedaluwarsa;
         }
 
-        if ($sisa <= self::AMBANG_AKAN_BERAKHIR) {
-            return StatusLangganan::AkanBerakhir;
-        }
-
         if ($sumber === SumberLangganan::Trial) {
             return StatusLangganan::Trial;
+        }
+
+        if ($sisa <= self::AMBANG_AKAN_BERAKHIR) {
+            return StatusLangganan::AkanBerakhir;
         }
 
         return StatusLangganan::Aktif;

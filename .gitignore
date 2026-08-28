@@ -5,6 +5,10 @@
 /public/fonts-manifest.dev.json
 /public/hot
 /public/storage
+# Unggahan runtime (cover & PDF) tidak ikut repo — dihasilkan seeder saat
+# `migrate --seed`, dan unggahan asli bersifat data, bukan kode.
+/public/uploads/*
+!/public/uploads/.gitkeep
 /resources/js/actions
 /resources/js/routes
 /resources/js/wayfinder

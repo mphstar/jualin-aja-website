@@ -4,6 +4,7 @@ import {
     CalendarIcon,
     DownloadIcon,
     EyeOffIcon,
+    ExternalLinkIcon,
     FileTextIcon,
     PencilIcon,
     SendIcon,
@@ -304,6 +305,17 @@ export function HalamanDetailEbook({ id }: { id: string }) {
                                 <span className="max-w-[160px] truncate">
                                     {ebook.namaFile ?? '—'}
                                 </span>
+                                {ebook.fileUrl && (
+                                    <a
+                                        href={ebook.fileUrl}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        className="ml-1 inline-flex items-center gap-1 text-primary hover:underline"
+                                    >
+                                        <ExternalLinkIcon className="size-3.5" />
+                                        Lihat
+                                    </a>
+                                )}
                             </span>
                         </Baris>
                         <Separator />

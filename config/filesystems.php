@@ -39,9 +39,12 @@ return [
         ],
 
         'public' => [
+            // Ditulis langsung ke `public/uploads` sehingga berkas bisa diakses
+            // lewat URL tanpa perlu symlink `storage:link` (PRD: berkas contoh
+            // & ebook harus tersedia di produksi tanpa langkah manual).
             'driver' => 'local',
-            'root' => storage_path('app/public'),
-            'url' => rtrim((string) env('APP_URL', 'http://localhost'), '/').'/storage',
+            'root' => public_path('uploads'),
+            'url' => rtrim((string) env('APP_URL', 'http://localhost'), '/').'/uploads',
             'visibility' => 'public',
             'throw' => false,
             'report' => false,

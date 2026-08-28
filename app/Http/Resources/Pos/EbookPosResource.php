@@ -37,13 +37,37 @@ class EbookPosResource extends JsonResource
             'kategoriPrompt' => $this->kategori_prompt?->value,
             'kategoriPromptLabel' => $this->kategori_prompt?->label(),
             'deskripsi' => $this->deskripsi,
-            'coverUrl' => $this->coverUrl(),
+            'coverUrl' => $this->urlBerkas($this->cover_path, $request),
             'jumlahHalaman' => $this->jumlah_halaman,
             'ukuranMb' => $this->ukuran_berkas_bytes === null
                 ? null
                 : round($this->ukuran_berkas_bytes / 1_048_576, 1),
             'bolehUnduh' => $this->bolehUnduh,
-            'fileUrl' => $this->bolehUnduh ? $this->berkasUrl() : null,
+            'fileUrl' => $this->bolehUnduh
+                ? $this->urlBerkas($this->berkas_path, $request)
+                : null,
         ];
+    }
+
+    /**
+     * URL berkas relatif terhadap host yang mengirim permintaan.
+     *
+     * `Storage::disk('public')->url()` memakai `APP_URL` (= localhost:8000),
+     * yang benar untuk panel admin tapi salah bagi aplikasi POS yang datang
+     * lewat ngrok: `localhost` di perangkat itu menunjuk ke perangkatnya
+     * sendiri, jadi tautan unduhan tak pernah sampai. Memakai `$request->root()`
+     * membuat tautan selalu cocok dengan host yang dipakai aplikasi memanggil.
+     */
+    private function urlBerkas(?string $path, Request $request): ?string
+    {
+        if ($path === null || $path === '') {
+            return null;
+        }
+
+        if (str_starts_with($path, 'http://') || str_starts_with($path, 'https://')) {
+            return $path;
+        }
+
+        return rtrim((string) $request->root(), '/').'/uploads/'.ltrim($path, '/');
     }
 }

@@ -183,8 +183,14 @@ export function FormEbook({ id }: { id?: string }) {
                 form.reset({
                     jenis: ebook.jenis,
                     judul: ebook.judul,
-                    kategori: ebook.kategori,
-                    kategoriPrompt: ebook.kategoriPrompt,
+                    // API mengirim `null` untuk kategori yang tidak dipakai
+                    // (mis. RESEP → kategoriPrompt = null). `z.optional()`
+                    // hanya menerima `undefined`, bukan `null`, jadi null di sini
+                    // membuat validasi selalu gagal — dan karena field tsb tidak
+                    // dirender, kegagalannya tak terlihat: tombol simpan tanpa
+                    // pesan apa pun. Konversikan dulu ke `undefined`.
+                    kategori: ebook.kategori ?? undefined,
+                    kategoriPrompt: ebook.kategoriPrompt ?? undefined,
                     deskripsi: ebook.deskripsi,
                     status: ebook.status,
                     jumlahHalaman: ebook.jumlahHalaman

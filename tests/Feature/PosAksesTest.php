@@ -238,3 +238,25 @@ it('menutup seluruh aplikasi untuk toko yang ditangguhkan', function (): void {
         ->getJson(route('api.mobile.langganan'))
         ->assertForbidden();
 });
+
+it('menutup Pustaka untuk akun trial', function (): void {
+    // Trial masih "berjalan", tapi belum membeli — Pustaka hanya untuk paket
+    // Berbayar (Langganan). `langgananBerjalan()` tidak boleh menjadi acuan.
+    $toko = PosUser::factory()->trial()->create();
+
+    $this->actingAs($toko, 'pos')
+        ->getJson(route('api.mobile.langganan'))
+        ->assertOk()
+        ->assertJsonPath('langganan.bolehTransaksi', true)
+        ->assertJsonPath('langganan.bolehUnduhResep', false);
+});
+
+it('membuka Pustaka untuk paket berbayar', function (): void {
+    $toko = PosUser::factory()->berlangganan()->create();
+
+    $this->actingAs($toko, 'pos')
+        ->getJson(route('api.mobile.langganan'))
+        ->assertOk()
+        ->assertJsonPath('langganan.bolehTransaksi', true)
+        ->assertJsonPath('langganan.bolehUnduhResep', true);
+});

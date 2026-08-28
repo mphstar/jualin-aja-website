@@ -55,15 +55,18 @@ final class FilterStatusLangganan
                     $q->whereNull($kolomBerakhir)->orWhere($kolomBerakhir, '<', $hariIni);
                 }),
 
-            // sisa hari 0..7
+            // sisa hari 0..7 — DAN bukan trial: trial selalu TRIAL selama valid.
             StatusLangganan::AkanBerakhir => $query
                 ->where($kolomDitangguhkan, false)
                 ->where($kolomBerakhir, '>=', $hariIni)
-                ->where($kolomBerakhir, '<', $batasAkanBerakhir),
+                ->where($kolomBerakhir, '<', $batasAkanBerakhir)
+                ->where($kolomSumber, '!=', SumberLangganan::Trial->value),
 
+            // Trial valid berapa pun sisa harinya (termasuk yang di bawah ambang
+            // "akan berakhir" — uji coba baru hanya 3 hari).
             StatusLangganan::Trial => $query
                 ->where($kolomDitangguhkan, false)
-                ->where($kolomBerakhir, '>=', $batasAkanBerakhir)
+                ->where($kolomBerakhir, '>=', $hariIni)
                 ->where($kolomSumber, SumberLangganan::Trial->value),
 
             StatusLangganan::Aktif => $query

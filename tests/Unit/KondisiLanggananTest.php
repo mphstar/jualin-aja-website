@@ -45,7 +45,7 @@ it('menurunkan status dari sisa hari dan sumber', function (
     'lewat jauh → kedaluwarsa' => [-90, SumberLangganan::Trial, StatusLangganan::Kedaluwarsa],
     'berakhir hari ini → akan berakhir' => [0, SumberLangganan::Pembelian, StatusLangganan::AkanBerakhir],
     'tepat di ambang 7 hari → akan berakhir' => [7, SumberLangganan::Pembelian, StatusLangganan::AkanBerakhir],
-    'trial pun kalah oleh ambang' => [7, SumberLangganan::Trial, StatusLangganan::AkanBerakhir],
+    'trial tetap trial walau persis di ambang 7 hari' => [7, SumberLangganan::Trial, StatusLangganan::Trial],
     'sehari di luar ambang → aktif' => [8, SumberLangganan::Pembelian, StatusLangganan::Aktif],
     'sehari di luar ambang, sumber trial → trial' => [8, SumberLangganan::Trial, StatusLangganan::Trial],
     'perpanjangan manual → aktif' => [200, SumberLangganan::PerpanjanganManual, StatusLangganan::Aktif],

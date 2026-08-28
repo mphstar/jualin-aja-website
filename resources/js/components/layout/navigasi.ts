@@ -56,10 +56,10 @@ export const GRUP_NAVIGASI: GrupNavigasi[] = [
         label: 'Kelola',
         item: [
             {
-                judul: 'Resep',
+                judul: 'Pustaka',
                 href: '/resep',
                 ikon: BookOpenIcon,
-                keterangan: 'Katalog ebook resep untuk pelanggan berlangganan',
+                keterangan: 'Katalog ebook resep dan prompt untuk pelanggan berlangganan',
             },
             {
                 judul: 'Pembayaran',

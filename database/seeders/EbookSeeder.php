@@ -8,16 +8,18 @@ use App\Enums\StatusEbook;
 use App\Models\Ebook;
 use App\Models\PosUser;
 use App\Models\UnduhanEbook;
+use App\Support\PdfContoh;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 /**
  * 12 ebook (9 terbit, 3 draf) beserta riwayat unduhannya.
  *
- * Berkas PDF dan cover sengaja TIDAK ikut dibuat: seed hanya membangun
- * metadata. Unggahan sungguhan diuji lewat form /resep, dan menaruh berkas
- * palsu di storage hanya menyulitkan pembersihan.
+ * Setiap ebook diberi file PDF contoh yang valid (dibuat secara terprogram,
+ * lihat PdfContoh) supaya konten seed bisa dibuka/dipratinjau di aplikasi POS.
+ * Cover sengaja tidak dibuat — aplikasi memakai sampul huruf bila belum ada.
  */
 class EbookSeeder extends Seeder
 {
@@ -32,6 +34,9 @@ class EbookSeeder extends Seeder
             $draf = $i >= count($sumber) - $jumlahDraf;
             $dibuat = $sekarang->subDays($acak->bulat(20, 400));
 
+            // PDF contoh yang benar-benar bisa dibuka.
+            $berkas = $this->simpanBerkas($data['judul']);
+
             Ebook::query()->create([
                 'judul' => $data['judul'],
                 'slug' => Str::slug($data['judul']),
@@ -39,8 +44,9 @@ class EbookSeeder extends Seeder
                 'kategori' => $data['kategori'],
                 'kategori_prompt' => $data['kategoriPrompt'],
                 'deskripsi' => $data['deskripsi'],
-                'nama_berkas' => Str::slug($data['judul']).'.pdf',
-                'ukuran_berkas_bytes' => $acak->bulat(3, 24) * 1024 * 1024,
+                'berkas_path' => $berkas['path'],
+                'nama_berkas' => $berkas['nama'],
+                'ukuran_berkas_bytes' => $berkas['ukuran'],
                 'jumlah_halaman' => $acak->bulat(28, 140),
                 'status' => $draf ? StatusEbook::Draf : StatusEbook::Terbit,
                 'tanggal_terbit' => $draf ? null : $dibuat->addDays($acak->bulat(1, 10)),
@@ -50,6 +56,17 @@ class EbookSeeder extends Seeder
         }
 
         $this->buatUnduhan($acak, $sekarang);
+    }
+
+    /** @return array{path: string, nama: string, ukuran: int} */
+    private function simpanBerkas(string $judul): array
+    {
+        $nama = Str::slug($judul).'.pdf';
+        $bytes = PdfContoh::buat($judul);
+        $path = 'ebook/berkas/'.$nama;
+        Storage::disk('public')->put($path, $bytes);
+
+        return ['path' => $path, 'nama' => $nama, 'ukuran' => strlen($bytes)];
     }
 
     private function buatUnduhan(Acak $acak, CarbonImmutable $sekarang): void
