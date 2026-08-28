@@ -58,9 +58,9 @@ class EbookPosResource extends JsonResource
      * sendiri, jadi tautan unduhan tak pernah sampai. Memakai `$request->root()`
      * membuat tautan selalu cocok dengan host yang dipakai aplikasi memanggil.
      */
-    private function urlBerkas(?string $path, Request $request): ?string
+    private function urlBerkas(mixed $path, Request $request): ?string
     {
-        if ($path === null || $path === '') {
+        if (! is_string($path) || $path === '') {
             return null;
         }
 

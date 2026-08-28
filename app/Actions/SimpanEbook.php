@@ -54,12 +54,12 @@ final readonly class SimpanEbook
 
         if ($cover !== null) {
             $this->hapusBerkas($ebook?->cover_path);
-            $atribut['cover_path'] = $cover->store('ebook/cover', 'public');
+            $atribut['cover_path'] = $this->simpan($cover, 'ebook/cover');
         }
 
         if ($berkas !== null) {
             $this->hapusBerkas($ebook?->berkas_path);
-            $atribut['berkas_path'] = $berkas->store('ebook/berkas', 'public');
+            $atribut['berkas_path'] = $this->simpan($berkas, 'ebook/berkas');
             $atribut['nama_berkas'] = $berkas->getClientOriginalName();
             $atribut['ukuran_berkas_bytes'] = $berkas->getSize();
         }
@@ -83,6 +83,24 @@ final readonly class SimpanEbook
         $this->catat($ebook, $baru, $statusLama);
 
         return $ebook;
+    }
+
+    /**
+     * Simpan unggahan ke disk publik. Kalau write gagal (mis. folder tidak
+     * writable), `store()` mengembalikan false — menyimpannya ke atribut akan
+     * meracuni `berkas_path` dengan boolean dan membuat resource/`unduh`
+     * melempar TypeError (500). Guard ini mengubahnya jadi pesan validasi yang
+     * bisa dipahami, bukan layar server error.
+     */
+    private function simpan(UploadedFile $file, string $direktori): string
+    {
+        $path = $file->store($direktori, 'public');
+
+        if (! is_string($path) || $path === '') {
+            abort(422, 'Gagal menyimpan berkas. Periksa izin folder penyimpanan.');
+        }
+
+        return $path;
     }
 
     private function catat(Ebook $ebook, bool $baru, ?StatusEbook $statusLama): void

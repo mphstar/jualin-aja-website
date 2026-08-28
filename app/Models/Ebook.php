@@ -81,9 +81,11 @@ class Ebook extends Model
         return self::keUrl($this->berkas_path);
     }
 
-    private static function keUrl(?string $path): ?string
+    private static function keUrl(mixed $path): ?string
     {
-        if ($path === null || $path === '') {
+        // `berkas_path`/`cover_path` bisa saja tersimpan sebagai boolean false
+        // (hasil `store()` yang gagal) pada data lama — jangan sampai TypeError.
+        if (! is_string($path) || $path === '') {
             return null;
         }
 
