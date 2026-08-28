@@ -18,6 +18,10 @@ RUN apk add --no-cache \
 ADD --chmod=0755 https://github.com/mlocati/docker-php-extension-installer/releases/latest/download/install-php-extensions /usr/local/bin/
 RUN install-php-extensions pdo_mysql gd zip bcmath opcache intl mbstring
 
+# Naikkan batas unggahan. Default PHP-FPM hanya 2M/8M; aplikasi mengizinkan
+# PDF ≤ 50MB dan cover ≤ 4MB, jadi beri ruang (64M) untuk body multipart.
+RUN printf 'upload_max_filesize = 64M\npost_max_size = 64M\nmax_execution_time = 300\nmax_input_time = 300\nmemory_limit = 512M\n' > "$PHP_INI_DIR/conf.d/99-uploads.ini"
+
 # Install Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
