@@ -93,6 +93,9 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
         Route::get('pengaturan/harga-paket', [PengaturanController::class, 'hargaPaket'])->name('pengaturan.harga');
         Route::put('pengaturan/harga-paket', [PengaturanController::class, 'simpanHargaPaket'])->name('pengaturan.harga.simpan');
 
+        Route::get('pengaturan/midtrans', [PengaturanController::class, 'midtrans'])->name('pengaturan.midtrans');
+        Route::put('pengaturan/midtrans', [PengaturanController::class, 'simpanMidtrans'])->name('pengaturan.midtrans.simpan');
+
         Route::get('tiket', [TiketController::class, 'index'])->name('tiket.index');
         Route::get('tiket/{tiket}', [TiketController::class, 'show'])->name('tiket.show');
         Route::post('tiket/{tiket}/respon', [TiketController::class, 'respon'])->name('tiket.respon');

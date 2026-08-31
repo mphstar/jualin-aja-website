@@ -9,10 +9,12 @@ use App\Enums\JenisAksi;
 use App\Enums\TargetAksi;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\SimpanHargaPaketRequest;
+use App\Http\Requests\SimpanPengaturanMidtransRequest;
 use App\Models\Pengaturan;
 use App\Services\PencatatAktivitas;
 use App\Support\Format;
 use App\Support\HargaPaket;
+use App\Support\KonfigurasiMidtrans;
 
 class PengaturanController extends Controller
 {
@@ -56,5 +58,53 @@ class PengaturanController extends Controller
         }
 
         return $baru;
+    }
+
+    /** @return array<string, mixed> */
+    public function midtrans(): array
+    {
+        return KonfigurasiMidtrans::semua();
+    }
+
+    /** @return array<string, mixed> */
+    public function simpanMidtrans(SimpanPengaturanMidtransRequest $request): array
+    {
+        $sebelumnya = KonfigurasiMidtrans::semua();
+        $baru = array_merge($sebelumnya, $request->konfigurasi());
+
+        Pengaturan::simpan(Pengaturan::KUNCI_MIDTRANS, $baru);
+
+        $berubah = [];
+        if ($sebelumnya['is_production'] !== $baru['is_production']) {
+            $berubah[] = 'mode '.$this->labelMode($sebelumnya['is_production'])
+                .' → '.$this->labelMode($baru['is_production']);
+        }
+
+        if (($sebelumnya['server_key'] ?? '') !== $baru['server_key']) {
+            $berubah[] = 'server key';
+        }
+
+        if (($sebelumnya['client_key'] ?? '') !== $baru['client_key']) {
+            $berubah[] = 'client key';
+        }
+
+        if (($sebelumnya['timeout'] ?? null) !== $baru['timeout']) {
+            $berubah[] = 'batas waktu';
+        }
+
+        if ($berubah !== []) {
+            $this->pencatat->catat(
+                aksi: JenisAksi::PengaturanUbah,
+                targetTipe: TargetAksi::Sistem,
+                deskripsi: 'Mengubah pengaturan pembayaran Midtrans: '.implode(', ', $berubah).'.',
+            );
+        }
+
+        return $baru;
+    }
+
+    private function labelMode(mixed $produksi): string
+    {
+        return $produksi ? 'produksi' : 'sandbox';
     }
 }

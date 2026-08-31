@@ -18,6 +18,8 @@ class Pengaturan extends Model
 {
     public const string KUNCI_HARGA_PAKET = 'harga_paket';
 
+    public const string KUNCI_MIDTRANS = 'midtrans';
+
     protected $table = 'pengaturan';
 
     protected $primaryKey = 'kunci';

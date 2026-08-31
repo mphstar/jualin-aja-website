@@ -1,16 +1,29 @@
 import { create } from 'zustand';
 import { api } from '@/lib/api';
-import type { HargaPaket } from '@/lib/api';
+import type { HargaPaket, PengaturanMidtrans } from '@/lib/api';
 import { HARGA_PAKET_DEFAULT } from '@/lib/konstanta';
+
+export const PENGATURAN_MIDTRANS_DEFAULT: PengaturanMidtrans = {
+    server_key: '',
+    client_key: '',
+    is_production: false,
+    timeout: 15,
+};
 
 interface PengaturanState {
     hargaPaket: HargaPaket;
+    midtrans: PengaturanMidtrans;
     memuat: boolean;
     menyimpan: boolean;
+    memuatMidtrans: boolean;
+    menyimpanMidtrans: boolean;
     sudahDimuat: boolean;
+    sudahDimuatMidtrans: boolean;
 
     muat: () => Promise<void>;
+    muatMidtrans: () => Promise<void>;
     simpanHarga: (harga: HargaPaket) => Promise<void>;
+    simpanMidtrans: (midtrans: PengaturanMidtrans) => Promise<void>;
     kembalikanHargaAwal: () => Promise<void>;
 }
 
@@ -23,9 +36,13 @@ interface PengaturanState {
  */
 export const usePengaturanStore = create<PengaturanState>()((set, get) => ({
     hargaPaket: HARGA_PAKET_DEFAULT,
+    midtrans: PENGATURAN_MIDTRANS_DEFAULT,
     memuat: false,
     menyimpan: false,
+    memuatMidtrans: false,
+    menyimpanMidtrans: false,
     sudahDimuat: false,
+    sudahDimuatMidtrans: false,
 
     muat: async () => {
         if (get().memuat) {
@@ -44,6 +61,23 @@ export const usePengaturanStore = create<PengaturanState>()((set, get) => ({
         }
     },
 
+    muatMidtrans: async () => {
+        if (get().memuatMidtrans) {
+            return;
+        }
+
+        set({ memuatMidtrans: true });
+
+        try {
+            set({
+                midtrans: await api.pengaturan.ambilPengaturanMidtrans(),
+                sudahDimuatMidtrans: true,
+            });
+        } finally {
+            set({ memuatMidtrans: false });
+        }
+    },
+
     simpanHarga: async (harga) => {
         set({ menyimpan: true });
 
@@ -54,6 +88,20 @@ export const usePengaturanStore = create<PengaturanState>()((set, get) => ({
             });
         } finally {
             set({ menyimpan: false });
+        }
+    },
+
+    simpanMidtrans: async (midtrans) => {
+        set({ menyimpanMidtrans: true });
+
+        try {
+            set({
+                midtrans:
+                    await api.pengaturan.simpanPengaturanMidtrans(midtrans),
+                sudahDimuatMidtrans: true,
+            });
+        } finally {
+            set({ menyimpanMidtrans: false });
         }
     },
 

@@ -46,4 +46,5 @@ export type {
 } from '@/lib/api/pembayaran';
 export type { ParamsAktivitas } from '@/lib/api/aktivitas';
 export type { HargaPaket } from '@/lib/api/pengaturan';
+export type { PengaturanMidtrans } from '@/lib/api/pengaturan';
 export type { MasukanMasuk, HasilMasuk } from '@/lib/api/auth';

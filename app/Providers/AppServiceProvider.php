@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use App\Contracts\GerbangPembayaran;
 use App\Services\MidtransGerbang;
+use App\Support\KonfigurasiMidtrans;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -26,9 +27,9 @@ class AppServiceProvider extends ServiceProvider
          * dan tidak ada satu pun tes yang menembak jaringan Midtrans.
          */
         $this->app->singleton(GerbangPembayaran::class, fn (): MidtransGerbang => new MidtransGerbang(
-            serverKey: config('services.midtrans.server_key'),
-            produksi: (bool) config('services.midtrans.is_production'),
-            timeout: (int) config('services.midtrans.timeout', 15),
+            serverKey: KonfigurasiMidtrans::serverKey(),
+            produksi: KonfigurasiMidtrans::produksi(),
+            timeout: KonfigurasiMidtrans::timeout(),
         ));
     }
 
