@@ -13,56 +13,52 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { KesalahanApi } from '@/lib/api';
-import type { PengaturanMidtrans } from '@/lib/api';
+import type { PengaturanMayar } from '@/lib/api';
 import { usePengaturanStore } from '@/stores/pengaturanStore';
 
 /**
- * Konfigurasi pembayaran Midtrans dari panel admin.
+ * Konfigurasi pembayaran Mayar dari panel admin.
  *
  * Nilai kosong pada kunci mengartikan pembayaran otomatis mati (server menolak
  * pembuatan tagihan dan mengarahkan pengguna ke perpanjangan manual), jadi
  * simpannya tidak dilarang — hanya dinotice dalam form.
  */
-export function FormPengaturanMidtrans() {
-    const midtrans = usePengaturanStore((s) => s.midtrans);
-    const memuatMidtrans = usePengaturanStore((s) => s.memuatMidtrans);
-    const menyimpanMidtrans = usePengaturanStore((s) => s.menyimpanMidtrans);
-    const sudahDimuatMidtrans = usePengaturanStore(
-        (s) => s.sudahDimuatMidtrans,
-    );
-    const muatMidtrans = usePengaturanStore((s) => s.muatMidtrans);
-    const simpanMidtrans = usePengaturanStore((s) => s.simpanMidtrans);
+export function FormPengaturanMayar() {
+    const mayar = usePengaturanStore((s) => s.mayar);
+    const memuatMayar = usePengaturanStore((s) => s.memuatMayar);
+    const menyimpanMayar = usePengaturanStore((s) => s.menyimpanMayar);
+    const sudahDimuatMayar = usePengaturanStore((s) => s.sudahDimuatMayar);
+    const muatMayar = usePengaturanStore((s) => s.muatMayar);
+    const simpanMayar = usePengaturanStore((s) => s.simpanMayar);
 
     // Config hanya dimuat saat halaman ini dibuka, bukan di seluruh panel.
     useEffect(() => {
-        if (!sudahDimuatMidtrans && !memuatMidtrans) {
-            void muatMidtrans();
+        if (!sudahDimuatMayar && !memuatMayar) {
+            void muatMayar();
         }
-    }, [sudahDimuatMidtrans, memuatMidtrans, muatMidtrans]);
+    }, [sudahDimuatMayar, memuatMayar, muatMayar]);
 
-    const [nilai, setNilai] = useState<PengaturanMidtrans>(midtrans);
-    const [nilaiTerakhir, setNilaiTerakhir] = useState(midtrans);
+    const [nilai, setNilai] = useState<PengaturanMayar>(mayar);
+    const [nilaiTerakhir, setNilaiTerakhir] = useState(mayar);
     const [tampilkanKunci, setTampilkanKunci] = useState(false);
 
     // Sinkronkan isian saat nilai tiba dari server atau berubah setelah disimpan.
-    if (midtrans !== nilaiTerakhir) {
-        setNilaiTerakhir(midtrans);
-        setNilai(midtrans);
+    if (mayar !== nilaiTerakhir) {
+        setNilaiTerakhir(mayar);
+        setNilai(mayar);
     }
 
     const berubah =
-        nilai.server_key !== midtrans.server_key ||
-        nilai.client_key !== midtrans.client_key ||
-        nilai.is_production !== midtrans.is_production ||
-        nilai.timeout !== midtrans.timeout;
+        nilai.api_key !== mayar.api_key ||
+        nilai.is_production !== mayar.is_production ||
+        nilai.timeout !== mayar.timeout;
 
-    const kunciKosong = nilai.server_key.trim() === '';
+    const kunciKosong = nilai.api_key.trim() === '';
 
     async function simpan() {
         try {
-            await simpanMidtrans({
-                server_key: nilai.server_key.trim(),
-                client_key: nilai.client_key.trim(),
+            await simpanMayar({
+                api_key: nilai.api_key.trim(),
                 is_production: nilai.is_production,
                 timeout: Number(nilai.timeout) || 15,
             });
@@ -79,7 +75,7 @@ export function FormPengaturanMidtrans() {
     return (
         <Card>
             <CardHeader>
-                <CardTitle className="text-base">Pembayaran Midtrans</CardTitle>
+                <CardTitle className="text-base">Pembayaran Mayar</CardTitle>
                 <p className="text-sm text-muted-foreground">
                     Kredensial dan mode (sandbox / produksi) gerbang pembayaran.
                 </p>
@@ -90,7 +86,7 @@ export function FormPengaturanMidtrans() {
                     <InfoIcon className="mt-0.5 size-4 shrink-0" />
                     <p>
                         {kunciKosong
-                            ? 'Server key kosong: pembayaran otomatis mati dan tagihan hanya bisa diperpanjang secara manual.'
+                            ? 'API key kosong: pembayaran otomatis mati dan tagihan hanya bisa diperpanjang secara manual.'
                             : 'Mode aktif: ' +
                               (nilai.is_production ? 'produksi' : 'sandbox') +
                               '. Perubahan berlaku untuk tagihan baru.'}
@@ -99,18 +95,18 @@ export function FormPengaturanMidtrans() {
 
                 <div className="grid gap-4">
                     <div className="grid gap-2">
-                        <Label htmlFor="midtrans-server-key">Server key</Label>
+                        <Label htmlFor="mayar-api-key">API key</Label>
                         <div className="relative">
                             <Input
-                                id="midtrans-server-key"
+                                id="mayar-api-key"
                                 type={tampilkanKunci ? 'text' : 'password'}
                                 autoComplete="off"
                                 spellCheck={false}
-                                value={nilai.server_key}
+                                value={nilai.api_key}
                                 onChange={(e) =>
                                     setNilai((n) => ({
                                         ...n,
-                                        server_key: e.target.value,
+                                        api_key: e.target.value,
                                     }))
                                 }
                             />
@@ -132,25 +128,8 @@ export function FormPengaturanMidtrans() {
                             </button>
                         </div>
                         <p className="text-xs text-muted-foreground">
-                            Dimulai dengan SB-Mid-server- untuk sandbox.
+                            Diambil dari panel Mayar, menu Integration / API.
                         </p>
-                    </div>
-
-                    <div className="grid gap-2">
-                        <Label htmlFor="midtrans-client-key">Client key</Label>
-                        <Input
-                            id="midtrans-client-key"
-                            type={tampilkanKunci ? 'text' : 'password'}
-                            autoComplete="off"
-                            spellCheck={false}
-                            value={nilai.client_key}
-                            onChange={(e) =>
-                                setNilai((n) => ({
-                                    ...n,
-                                    client_key: e.target.value,
-                                }))
-                            }
-                        />
                     </div>
 
                     <div className="flex items-center justify-between gap-4 rounded-md border p-3">
@@ -167,7 +146,7 @@ export function FormPengaturanMidtrans() {
                             </div>
                         </div>
                         <Switch
-                            id="midtrans-produksi"
+                            id="mayar-produksi"
                             checked={nilai.is_production}
                             onCheckedChange={(v) =>
                                 setNilai((n) => ({ ...n, is_production: v }))
@@ -176,11 +155,11 @@ export function FormPengaturanMidtrans() {
                     </div>
 
                     <div className="grid gap-2 sm:max-w-[200px]">
-                        <Label htmlFor="midtrans-timeout">
+                        <Label htmlFor="mayar-timeout">
                             Batas waktu (detik)
                         </Label>
                         <Input
-                            id="midtrans-timeout"
+                            id="mayar-timeout"
                             type="number"
                             min={1}
                             max={120}
@@ -199,9 +178,9 @@ export function FormPengaturanMidtrans() {
                 <div className="flex flex-wrap items-center gap-2">
                     <Button
                         onClick={simpan}
-                        disabled={menyimpanMidtrans || !berubah}
+                        disabled={menyimpanMayar || !berubah}
                     >
-                        {menyimpanMidtrans && (
+                        {menyimpanMayar && (
                             <Loader2Icon className="size-4 animate-spin" />
                         )}
                         Simpan pembayaran

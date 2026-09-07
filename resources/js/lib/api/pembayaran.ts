@@ -43,7 +43,7 @@ export function ambilDetailInvoice(id: string): Promise<DetailInvoice> {
 
 /**
  * Tandai lunas (PRD §F6.7) — server sekaligus memperpanjang langganan tokonya
- * dan menulis dua entri log. Jalur yang sama nanti dipakai webhook Midtrans.
+ * dan menulis dua entri log. Jalur yang sama nanti dipakai webhook Mayar.
  */
 export function tandaiLunas(id: string): Promise<Pembayaran> {
     return kirim<Pembayaran>(`/pembayaran/${id}/tandai-lunas`);

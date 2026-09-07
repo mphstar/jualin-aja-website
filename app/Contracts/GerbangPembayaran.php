@@ -15,15 +15,15 @@ use App\Support\HasilCharge;
  * praktis: uji fitur memasang gerbang tiruan tanpa menyentuh jaringan, dan
  * pindah gerbang nanti (Xendit, misalnya) tidak menyentuh satu pun Action.
  *
- * Implementasi bawaannya App\Services\MidtransGerbang.
+ * Implementasi bawaannya App\Services\MayarGerbang.
  */
 interface GerbangPembayaran
 {
     /**
      * Buat transaksi di gerbang untuk sebuah invoice.
      *
-     * Yang dikembalikan adalah instruksi pembayaran — nomor VA, URL kode QR,
-     * atau deeplink e-wallet — yang langsung ditampilkan aplikasi mobile.
+     * Yang dikembalikan adalah instruksi pembayaran — instrumen native yang
+     * langsung digambar aplikasi mobile.
      */
     public function buatTransaksi(Pembayaran $pembayaran, SaluranBayar $saluran): HasilCharge;
 
@@ -39,7 +39,7 @@ interface GerbangPembayaran
     public function periksaStatus(Pembayaran $pembayaran): array;
 
     /**
-     * Pastikan notifikasi berasal dari gerbang, bukan dari pengirim lain.
+     * Pastikan notifikasi berbentuk permintaan webhook Mayar.
      *
      * @param  array<string, mixed>  $payload
      */

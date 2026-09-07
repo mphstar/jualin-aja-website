@@ -18,7 +18,7 @@ class Pengaturan extends Model
 {
     public const string KUNCI_HARGA_PAKET = 'harga_paket';
 
-    public const string KUNCI_MIDTRANS = 'midtrans';
+    public const string KUNCI_MAYAR = 'mayar';
 
     protected $table = 'pengaturan';
 

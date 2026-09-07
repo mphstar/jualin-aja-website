@@ -7,20 +7,20 @@ namespace App\Support;
 use App\Models\Pengaturan;
 
 /**
- * Konfigurasi pembayaran Midtrans — nilai berlapis.
+ * Konfigurasi pembayaran Mayar — nilai berlapis.
  *
  * Satu tempat seperti `HargaPaket`, tapi dengan dua lapis sumber. `.env`
  * (via `config/services.php`) adalah bawaan pabrik yang dipakai sebelum admin
  * pernah menyimpan apa pun; tabel `pengaturan` adalah nilai yang tersimpan dan
- * MENANG begitu ada. Ini membuat server key sandbox bisa dipasang saat
- * scaffolding dan ditimpa lewat panel tanpa menyentuh berkas `.env`.
+ * MENANG begitu ada. Ini membuat API key sandbox bisa dipasang saat scaffolding
+ * dan ditimpa lewat panel tanpa menyentuh berkas `.env`.
  */
-final class KonfigurasiMidtrans
+final class KonfigurasiMayar
 {
     /** @return array<string, mixed> */
     public static function semua(): array
     {
-        $tersimpan = Pengaturan::ambil(Pengaturan::KUNCI_MIDTRANS, []);
+        $tersimpan = Pengaturan::ambil(Pengaturan::KUNCI_MAYAR, []);
 
         if (! is_array($tersimpan)) {
             $tersimpan = [];
@@ -29,14 +29,9 @@ final class KonfigurasiMidtrans
         return [...self::bawaan(), ...$tersimpan];
     }
 
-    public static function serverKey(): string
+    public static function apiKey(): string
     {
-        return (string) (self::semua()['server_key'] ?? '');
-    }
-
-    public static function clientKey(): string
-    {
-        return (string) (self::semua()['client_key'] ?? '');
+        return (string) (self::semua()['api_key'] ?? '');
     }
 
     public static function produksi(): bool
@@ -57,10 +52,9 @@ final class KonfigurasiMidtrans
     public static function bawaan(): array
     {
         return [
-            'server_key' => (string) config('services.midtrans.server_key', ''),
-            'client_key' => (string) config('services.midtrans.client_key', ''),
-            'is_production' => (bool) config('services.midtrans.is_production', false),
-            'timeout' => (int) config('services.midtrans.timeout', 15),
+            'api_key' => (string) config('services.mayar.api_key', ''),
+            'is_production' => (bool) config('services.mayar.is_production', false),
+            'timeout' => (int) config('services.mayar.timeout', 15),
         ];
     }
 }

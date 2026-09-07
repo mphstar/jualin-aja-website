@@ -86,6 +86,7 @@ export const LABEL_METODE_PEMBAYARAN: Record<MetodePembayaran, string> = {
     QRIS: 'QRIS',
     VIRTUAL_ACCOUNT: 'Virtual Account',
     EWALLET: 'E-Wallet',
+    ONLINE: 'Pembayaran Online',
     MANUAL: 'Manual / Tunai',
 };
 

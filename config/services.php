@@ -36,17 +36,17 @@ return [
     ],
 
     /*
-     * Gerbang pembayaran langganan (App\Services\MidtransGerbang).
+     * Gerbang pembayaran langganan (App\Services\MayarGerbang).
      *
-     * `server_key` kosong berarti pembayaran otomatis mati: tagihan tetap bisa
+     * `api_key` kosong berarti pembayaran otomatis mati: tagihan tetap bisa
      * dilihat, tapi pembuatannya menjawab 503 dengan pesan yang menyarankan
      * perpanjangan manual — bukan galat mentah di layar pemilik toko.
      */
-    'midtrans' => [
-        'server_key' => env('MIDTRANS_SERVER_KEY'),
-        'client_key' => env('MIDTRANS_CLIENT_KEY'),
-        'is_production' => (bool) env('MIDTRANS_IS_PRODUCTION', false),
-        'timeout' => (int) env('MIDTRANS_TIMEOUT', 15),
+    'mayar' => [
+        'api_key' => env('MAYAR_API_KEY'),
+        'is_production' => (bool) env('MAYAR_IS_PRODUCTION', false),
+        'timeout' => (int) env('MAYAR_TIMEOUT', 15),
+        'webhook_secret' => env('MAYAR_WEBHOOK_SECRET'),
     ],
 
 ];

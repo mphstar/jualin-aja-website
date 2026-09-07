@@ -26,7 +26,12 @@ class BuatTagihanRequest extends FormRequest
                 static fn (DurasiPaket $d): string => $d->value,
                 DurasiPaket::berbayar(),
             ))],
-            'saluran' => ['required', Rule::enum(SaluranBayar::class)],
+            // Hanya saluran yang diputuskan server yang sah — nilai dari klien
+            // tidak pernah sampai ke create call tanpa lewat saringan ini.
+            'saluran' => ['required', Rule::in(array_map(
+                static fn (SaluranBayar $s): string => $s->value,
+                SaluranBayar::daftar(),
+            ))],
         ];
     }
 

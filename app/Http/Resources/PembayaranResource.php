@@ -11,8 +11,8 @@ use Illuminate\Http\Resources\Json\JsonResource;
 /**
  * Padanan tipe `Pembayaran`.
  *
- * Kolom Midtrans sengaja TIDAK dikeluarkan: `snap_token` dan payload mentah
- * tidak dibutuhkan panel admin, dan mengirimnya berarti menyebar data gerbang
+ * Kolom gateway sengaja TIDAK dikeluarkan: id dan payload mentah tidak
+ * dibutuhkan panel admin, dan mengirimnya berarti menyebar data gerbang
  * pembayaran ke tempat yang tidak memerlukannya.
  *
  * @mixin Pembayaran

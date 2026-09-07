@@ -10,6 +10,7 @@ enum MetodePembayaran: string
     case Qris = 'QRIS';
     case VirtualAccount = 'VIRTUAL_ACCOUNT';
     case Ewallet = 'EWALLET';
+    case Online = 'ONLINE';
     case Manual = 'MANUAL';
 
     public function label(): string
@@ -19,6 +20,7 @@ enum MetodePembayaran: string
             self::Qris => 'QRIS',
             self::VirtualAccount => 'Virtual Account',
             self::Ewallet => 'E-Wallet',
+            self::Online => 'Pembayaran Online',
             self::Manual => 'Manual / Tunai',
         };
     }

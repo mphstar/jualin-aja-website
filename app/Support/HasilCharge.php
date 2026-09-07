@@ -10,9 +10,8 @@ use Carbon\CarbonImmutable;
  * Instruksi pembayaran yang dijawab gerbang.
  *
  * Satu bentuk untuk semua saluran, dengan field yang tidak terpakai bernilai
- * null. Alternatifnya — satu kelas per saluran — memaksa setiap pemanggil
- * memeriksa tipe sebelum bisa membaca apa pun, padahal yang mereka butuhkan
- * cuma "apa yang harus saya tampilkan ke pengguna".
+ * null. `instruksi` adalah instrumen bayar yang sudah dinormalisasi sendiri
+ * (lihat parser paymentDetail di MayarGerbang), bukan objek biasa gerbang.
  */
 final readonly class HasilCharge
 {
@@ -22,9 +21,12 @@ final readonly class HasilCharge
         public string $orderId,
         public array $payload,
         public ?CarbonImmutable $batasBayar = null,
+        public ?CarbonImmutable $kedaluwarsaSaluran = null,
         public ?string $kodeBayar = null,
         public ?string $kodePerusahaan = null,
         public ?string $qrUrl = null,
         public ?string $tautanBayar = null,
+        /** @var array<string, mixed>|null */
+        public ?array $instruksi = null,
     ) {}
 }

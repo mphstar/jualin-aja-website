@@ -1,29 +1,28 @@
 import { create } from 'zustand';
 import { api } from '@/lib/api';
-import type { HargaPaket, PengaturanMidtrans } from '@/lib/api';
+import type { HargaPaket, PengaturanMayar } from '@/lib/api';
 import { HARGA_PAKET_DEFAULT } from '@/lib/konstanta';
 
-export const PENGATURAN_MIDTRANS_DEFAULT: PengaturanMidtrans = {
-    server_key: '',
-    client_key: '',
+export const PENGATURAN_MAYAR_DEFAULT: PengaturanMayar = {
+    api_key: '',
     is_production: false,
     timeout: 15,
 };
 
 interface PengaturanState {
     hargaPaket: HargaPaket;
-    midtrans: PengaturanMidtrans;
+    mayar: PengaturanMayar;
     memuat: boolean;
     menyimpan: boolean;
-    memuatMidtrans: boolean;
-    menyimpanMidtrans: boolean;
+    memuatMayar: boolean;
+    menyimpanMayar: boolean;
     sudahDimuat: boolean;
-    sudahDimuatMidtrans: boolean;
+    sudahDimuatMayar: boolean;
 
     muat: () => Promise<void>;
-    muatMidtrans: () => Promise<void>;
+    muatMayar: () => Promise<void>;
     simpanHarga: (harga: HargaPaket) => Promise<void>;
-    simpanMidtrans: (midtrans: PengaturanMidtrans) => Promise<void>;
+    simpanMayar: (mayar: PengaturanMayar) => Promise<void>;
     kembalikanHargaAwal: () => Promise<void>;
 }
 
@@ -36,13 +35,13 @@ interface PengaturanState {
  */
 export const usePengaturanStore = create<PengaturanState>()((set, get) => ({
     hargaPaket: HARGA_PAKET_DEFAULT,
-    midtrans: PENGATURAN_MIDTRANS_DEFAULT,
+    mayar: PENGATURAN_MAYAR_DEFAULT,
     memuat: false,
     menyimpan: false,
-    memuatMidtrans: false,
-    menyimpanMidtrans: false,
+    memuatMayar: false,
+    menyimpanMayar: false,
     sudahDimuat: false,
-    sudahDimuatMidtrans: false,
+    sudahDimuatMayar: false,
 
     muat: async () => {
         if (get().memuat) {
@@ -61,20 +60,20 @@ export const usePengaturanStore = create<PengaturanState>()((set, get) => ({
         }
     },
 
-    muatMidtrans: async () => {
-        if (get().memuatMidtrans) {
+    muatMayar: async () => {
+        if (get().memuatMayar) {
             return;
         }
 
-        set({ memuatMidtrans: true });
+        set({ memuatMayar: true });
 
         try {
             set({
-                midtrans: await api.pengaturan.ambilPengaturanMidtrans(),
-                sudahDimuatMidtrans: true,
+                mayar: await api.pengaturan.ambilPengaturanMayar(),
+                sudahDimuatMayar: true,
             });
         } finally {
-            set({ memuatMidtrans: false });
+            set({ memuatMayar: false });
         }
     },
 
@@ -91,17 +90,16 @@ export const usePengaturanStore = create<PengaturanState>()((set, get) => ({
         }
     },
 
-    simpanMidtrans: async (midtrans) => {
-        set({ menyimpanMidtrans: true });
+    simpanMayar: async (mayar) => {
+        set({ menyimpanMayar: true });
 
         try {
             set({
-                midtrans:
-                    await api.pengaturan.simpanPengaturanMidtrans(midtrans),
-                sudahDimuatMidtrans: true,
+                mayar: await api.pengaturan.simpanPengaturanMayar(mayar),
+                sudahDimuatMayar: true,
             });
         } finally {
-            set({ menyimpanMidtrans: false });
+            set({ menyimpanMayar: false });
         }
     },
 

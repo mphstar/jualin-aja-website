@@ -6,7 +6,6 @@ namespace App\Models;
 
 use App\Enums\DurasiPaket;
 use App\Enums\MetodePembayaran;
-use App\Enums\SaluranBayar;
 use App\Enums\StatusPembayaran;
 use Database\Factories\PembayaranFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -23,29 +22,30 @@ use Illuminate\Support\Carbon;
  * @property int $nominal
  * @property DurasiPaket $durasi
  * @property MetodePembayaran $metode
- * @property SaluranBayar|null $saluran
+ * @property string|null $saluran
  * @property StatusPembayaran $status
  * @property Carbon $tanggal
  * @property Carbon|null $batas_bayar
+ * @property Carbon|null $kedaluwarsa_saluran
  * @property Carbon|null $berlaku_sampai
  * @property string|null $kode_bayar
  * @property string|null $kode_perusahaan
  * @property string|null $qr_url
  * @property string|null $tautan_bayar
+ * @property array<string, mixed>|null $instruksi_bayar
  * @property string|null $catatan
- * @property string|null $midtrans_order_id
- * @property string|null $midtrans_transaction_id
- * @property string|null $snap_token
- * @property array<string, mixed>|null $midtrans_payload
+ * @property string|null $mayar_order_id
+ * @property string|null $mayar_transaction_id
+ * @property array<string, mixed>|null $mayar_payload
  * @property Carbon|null $dibayar_pada
  * @property-read PosUser $posUser
  */
 #[Fillable([
     'nomor_invoice', 'pos_user_id', 'langganan_id', 'nominal', 'durasi',
-    'metode', 'saluran', 'status', 'tanggal', 'batas_bayar', 'berlaku_sampai',
-    'kode_bayar', 'kode_perusahaan', 'qr_url', 'tautan_bayar', 'catatan',
-    'midtrans_order_id', 'midtrans_transaction_id', 'snap_token',
-    'midtrans_payload', 'dibayar_pada',
+    'metode', 'saluran', 'status', 'tanggal', 'batas_bayar',
+    'kedaluwarsa_saluran', 'berlaku_sampai', 'kode_bayar', 'kode_perusahaan',
+    'qr_url', 'tautan_bayar', 'instruksi_bayar', 'catatan',
+    'mayar_order_id', 'mayar_transaction_id', 'mayar_payload', 'dibayar_pada',
 ])]
 class Pembayaran extends Model
 {
@@ -61,12 +61,13 @@ class Pembayaran extends Model
             'nominal' => 'integer',
             'durasi' => DurasiPaket::class,
             'metode' => MetodePembayaran::class,
-            'saluran' => SaluranBayar::class,
             'status' => StatusPembayaran::class,
             'tanggal' => 'datetime',
             'batas_bayar' => 'datetime',
+            'kedaluwarsa_saluran' => 'datetime',
             'berlaku_sampai' => 'datetime',
-            'midtrans_payload' => 'array',
+            'instruksi_bayar' => 'array',
+            'mayar_payload' => 'array',
             'dibayar_pada' => 'datetime',
         ];
     }
@@ -85,37 +86,17 @@ class Pembayaran extends Model
     /**
      * Status yang sudah memperhitungkan batas waktu.
      *
-     * Midtrans mengirim notifikasi `expire`, tapi ia bisa terlambat — dan
-     * tagihan yang sudah lewat batas tapi masih tercatat "menunggu" akan terus
-     * menampilkan nomor VA yang tidak bisa dibayar lagi. Diturunkan di sini,
-     * bukan ditulis ke kolom, supaya tidak bisa basi.
+     * Mayar mengirim webhook pengingat, tapi yang menutup tagihan yang belum
+     * dibayar adalah batas waktunya sendiri. Tagihan yang sudah lewat batas
+     * tapi masih tercatat "menunggu" akan terus menampilkan tautan pembayaran
+     * yang sudah tidak berlaku. Diturunkan di sini, bukan ditulis ke kolom,
+     * supaya tidak bisa basi.
      */
     public function statusKini(): StatusPembayaran
     {
         return $this->status === StatusPembayaran::Menunggu && $this->lewatBatas()
             ? StatusPembayaran::Kedaluwarsa
             : $this->status;
-    }
-
-    public function getQrUrlAttribute(?string $value): ?string
-    {
-        if (is_array($this->midtrans_payload) && ! empty($this->midtrans_payload['qr_string'])) {
-            return 'https://api.qrserver.com/v1/create-qr-code/?size=300x300&data='.rawurlencode((string) $this->midtrans_payload['qr_string']);
-        }
-
-        if (is_array($this->midtrans_payload)) {
-            foreach ((array) ($this->midtrans_payload['actions'] ?? []) as $aksi) {
-                if (is_array($aksi) && in_array($aksi['name'] ?? null, ['generate-qr-code-v2', 'generate-qr-code'], true)) {
-                    return (string) $aksi['url'];
-                }
-            }
-        }
-
-        if ($value !== null && $value !== '') {
-            return $value;
-        }
-
-        return null;
     }
 
     /** @return BelongsTo<Langganan, $this> */

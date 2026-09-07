@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use App\Http\Controllers\Api\MidtransController;
+use App\Http\Controllers\Api\MayarController;
 use App\Http\Controllers\Api\Mobile\AuthController as PosAuthController;
 use App\Http\Controllers\Api\Mobile\BerandaController;
 use App\Http\Controllers\Api\Mobile\EbookController as PosEbookController;
@@ -33,7 +33,7 @@ use Illuminate\Support\Facades\Route;
 |
 | Seluruh data panel admin mengalir lewat sini — halaman Inertia hanya
 | merender kerangkanya. Konsekuensinya API ini berdiri sendiri dan siap
-| dipakai aplikasi POS mobile serta webhook Midtrans nanti tanpa dibongkar.
+| dipakai aplikasi POS mobile serta webhook Mayar nanti tanpa dibongkar.
 |
 | Autentikasinya sesi (Sanctum stateful): cookie yang sama dengan halaman
 | Inertia, bukan token di localStorage.
@@ -93,8 +93,8 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
         Route::get('pengaturan/harga-paket', [PengaturanController::class, 'hargaPaket'])->name('pengaturan.harga');
         Route::put('pengaturan/harga-paket', [PengaturanController::class, 'simpanHargaPaket'])->name('pengaturan.harga.simpan');
 
-        Route::get('pengaturan/midtrans', [PengaturanController::class, 'midtrans'])->name('pengaturan.midtrans');
-        Route::put('pengaturan/midtrans', [PengaturanController::class, 'simpanMidtrans'])->name('pengaturan.midtrans.simpan');
+        Route::get('pengaturan/mayar', [PengaturanController::class, 'mayar'])->name('pengaturan.mayar');
+        Route::put('pengaturan/mayar', [PengaturanController::class, 'simpanMayar'])->name('pengaturan.mayar.simpan');
 
         Route::get('tiket', [TiketController::class, 'index'])->name('tiket.index');
         Route::get('tiket/{tiket}', [TiketController::class, 'show'])->name('tiket.show');
@@ -207,11 +207,15 @@ Route::prefix('mobile/v1')->name('api.mobile.')->group(function (): void {
 | Webhook gerbang pembayaran
 |--------------------------------------------------------------------------
 |
-| Tanpa autentikasi — Midtrans menembaknya dari servernya sendiri. Yang
-| membedakannya dari pengirim lain adalah `signature_key` di dalam badan
-| permintaan, diverifikasi di dalam controller.
+| Tanpa autentikasi — Mayar menembaknya dari servernya sendiri. Yang
+| membedakannya dari pengirim lain ada dua: rahasia panjang di dalam path
+| (dibandingkan konstan di controller) dan fakta bahwa status pembayaran
+| dibaca ulang dari `GET /transactions/{id}`, bukan dipercaya dari isi
+| notifikasinya.
 |
 */
 
-Route::post('midtrans/notifikasi', [MidtransController::class, 'notifikasi'])
-    ->name('api.midtrans.notifikasi');
+Route::post('mayar/notifikasi/{rahasia}', [MayarController::class, 'notifikasi'])
+    ->where('rahasia', '[A-Za-z0-9]{32,}')
+    ->middleware('throttle:30,1')
+    ->name('api.mayar.notifikasi');

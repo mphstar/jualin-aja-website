@@ -15,18 +15,17 @@ use App\Support\HargaPaket;
 use App\Support\KondisiLangganan;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
 use Throwable;
 
 /**
- * Terbitkan tagihan perpanjangan langganan dan minta instruksi bayarnya ke
- * Midtrans.
+ * Terbitkan tagihan perpanjangan langganan dan minta instrumen bayarnya ke
+ * Mayar.
  *
  * Urutannya sengaja: **baris invoice disimpan LEBIH DULU**, baru gerbangnya
- * dipanggil. Kalau dibalik, transaksi yang sudah terbentuk di Midtrans bisa
- * gagal tercatat di sini — dan uang yang masuk untuk invoice yang tidak
- * pernah ada adalah keadaan yang tidak bisa diperbaiki sendiri oleh webhook,
- * karena webhook mencari barisnya lewat `order_id`.
+ * dipanggil. Kalau dibalik, transaksi yang sudah terbentuk di Mayar bisa gagal
+ * tercatat di sini — dan uang yang masuk untuk invoice yang tidak pernah ada
+ * adalah keadaan yang tidak bisa diperbaiki sendiri oleh webhook, karena
+ * webhook mencari barisnya lewat `mayar_transaction_id`.
  *
  * Panggilan gerbangnya di LUAR transaksi basis data. Menahan transaksi selama
  * panggilan HTTP berarti menahan kunci baris selama beberapa detik setiap kali
@@ -51,22 +50,13 @@ final readonly class BuatTagihanLangganan
         $pembayaran = DB::transaction(function () use ($toko, $durasi, $saluran, $nominal): Pembayaran {
             $sekarang = CarbonImmutable::now();
 
-            /*
-             * `order_id` harus unik SELAMANYA di sisi Midtrans, termasuk untuk
-             * percobaan ulang atas paket yang sama. Nomor invoice saja tidak
-             * cukup kalau nanti ada pembatalan lalu pembuatan ulang, jadi ia
-             * diberi akhiran acak — sementara nomor invoice tetap rapi untuk
-             * dibaca manusia di panel admin.
-             */
-            $nomorInvoice = (new NomorInvoiceBerikutnya)($sekarang);
-
             return Pembayaran::query()->create([
-                'nomor_invoice' => $nomorInvoice,
+                'nomor_invoice' => (new NomorInvoiceBerikutnya)($sekarang),
                 'pos_user_id' => $toko->id,
                 'nominal' => $nominal,
                 'durasi' => $durasi,
-                'metode' => $saluran->metode(),
-                'saluran' => $saluran,
+                'metode' => $saluran->grup(),
+                'saluran' => $saluran->value,
                 'status' => StatusPembayaran::Menunggu,
                 'tanggal' => $sekarang,
                 'berlaku_sampai' => KondisiLangganan::tanggalBerakhirBaru(
@@ -74,7 +64,6 @@ final readonly class BuatTagihanLangganan
                     $durasi,
                     $sekarang,
                 ),
-                'midtrans_order_id' => str_replace('/', '-', $nomorInvoice).'-'.Str::lower(Str::random(6)),
                 'catatan' => 'Dibuat dari aplikasi POS.',
             ]);
         }, attempts: 3);
@@ -86,16 +75,16 @@ final readonly class BuatTagihanLangganan
              * Barisnya TIDAK dihapus, hanya ditandai gagal. Dua alasan:
              *
              * 1. Kalau permintaannya sempat sampai dan hanya jawabannya yang
-             *    hilang, Midtrans sudah punya transaksi dengan `order_id` ini —
-             *    dan webhook-nya nanti mencari barisnya lewat kolom itu. Baris
-             *    yang sudah dihapus membuat uang yang masuk tidak punya tempat
-             *    untuk dicatat.
+             *    hilang, Mayar sudah punya invoice dengan id ini — dan
+             *    webhook-nya nanti mencari barisnya lewat kolom itu. Baris yang
+             *    sudah dihapus membuat uang yang masuk tidak punya tempat untuk
+             *    dicatat.
              * 2. Percobaan yang gagal adalah kejadian yang layak terlihat di
              *    panel admin, bukan sesuatu yang dihapus diam-diam.
              *
              * Yang tidak boleh tertinggal cuma status "Menunggu": tagihan itu
              * akan terus muncul di aplikasi sebagai sesuatu yang bisa dibayar,
-             * padahal tidak ada instruksi bayarnya sama sekali.
+             * padahal tidak ada instrumen bayarnya sama sekali.
              */
             $pembayaran->update([
                 'status' => StatusPembayaran::Gagal,
@@ -106,13 +95,16 @@ final readonly class BuatTagihanLangganan
         }
 
         $pembayaran->update([
-            'midtrans_transaction_id' => $hasil->transactionId,
-            'midtrans_payload' => $hasil->payload,
+            'mayar_order_id' => $hasil->orderId,
+            'mayar_transaction_id' => $hasil->transactionId,
+            'mayar_payload' => $hasil->payload,
             'batas_bayar' => $hasil->batasBayar,
+            'kedaluwarsa_saluran' => $hasil->kedaluwarsaSaluran,
             'kode_bayar' => $hasil->kodeBayar,
             'kode_perusahaan' => $hasil->kodePerusahaan,
             'qr_url' => $hasil->qrUrl,
             'tautan_bayar' => $hasil->tautanBayar,
+            'instruksi_bayar' => $hasil->instruksi,
         ]);
 
         return $pembayaran->refresh();

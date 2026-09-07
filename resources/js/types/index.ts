@@ -21,7 +21,12 @@ export type StatusPembayaran =
     'LUNAS' | 'MENUNGGU' | 'GAGAL' | 'KEDALUWARSA' | 'REFUND';
 
 export type MetodePembayaran =
-    'TRANSFER_BANK' | 'QRIS' | 'VIRTUAL_ACCOUNT' | 'EWALLET' | 'MANUAL';
+    | 'TRANSFER_BANK'
+    | 'QRIS'
+    | 'VIRTUAL_ACCOUNT'
+    | 'EWALLET'
+    | 'ONLINE'
+    | 'MANUAL';
 
 export type KategoriEbook =
     'MINUMAN' | 'MAKANAN_BERAT' | 'SNACK' | 'DESSERT' | 'BAKERY' | 'BUMBU_SAUS';

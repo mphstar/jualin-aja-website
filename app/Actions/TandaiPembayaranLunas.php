@@ -17,7 +17,7 @@ use Illuminate\Support\Facades\DB;
 /**
  * Tandai invoice lunas — sekaligus memperpanjang langganan tokonya (PRD §F6.7).
  *
- * Ini titik masuk TUNGGAL pelunasan. Webhook Midtrans nanti memanggil action
+ * Ini titik masuk TUNGGAL pelunasan. Webhook Mayar memanggil action
  * yang sama, jadi perpanjangan langganan dan pencatatan log ikut terjadi tanpa
  * ada aturan yang perlu digandakan.
  */

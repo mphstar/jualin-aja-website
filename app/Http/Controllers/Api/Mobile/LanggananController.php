@@ -8,6 +8,7 @@ use App\Actions\BuatTagihanLangganan;
 use App\Actions\SelaraskanStatusPembayaran;
 use App\Contracts\GerbangPembayaran;
 use App\Enums\DurasiPaket;
+use App\Enums\SaluranBayar;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Pos\BuatTagihanRequest;
 use App\Http\Resources\Pos\LanggananTokoResource;
@@ -16,6 +17,7 @@ use App\Models\Pembayaran;
 use App\Support\HargaPaket;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Support\Facades\Log;
 
 /**
  * Langganan dan tagihannya, dari sisi pemilik toko.
@@ -37,7 +39,22 @@ class LanggananController extends Controller
         return [
             'langganan' => new LanggananTokoResource($toko),
             'harga' => $this->daftarHarga($toko->langganan_berakhir_pada !== null),
+            'saluran' => $this->daftarSaluran(),
         ];
+    }
+
+    /**
+     * Saluran yang boleh dipilih — milik server, bukan dikirim klien.
+     *
+     * @return list<array{kode: string, label: string, pakaiKode: bool}>
+     */
+    private function daftarSaluran(): array
+    {
+        return array_map(static fn (SaluranBayar $s): array => [
+            'kode' => $s->value,
+            'label' => $s->label(),
+            'pakaiKode' => $s->pakaiKode(),
+        ], SaluranBayar::daftar());
     }
 
     public function riwayatTagihan(Request $request): AnonymousResourceCollection
@@ -87,7 +104,27 @@ class LanggananController extends Controller
             return new TagihanResource($pembayaran);
         }
 
-        return new TagihanResource($selaraskan($pembayaran, $gerbang->periksaStatus($pembayaran)));
+        $status = $gerbang->periksaStatus($pembayaran);
+
+        /*
+         * Gerbang yang sama dengan webhook: hanya `paid` dari transaksi detail
+         * yang melunasi. Status `paid` dengan nominal tidak cocok ditahan —
+         * sesuatu di sisi Mayar salah konfigurasi, dan melunasi atas dasar itu
+         * berarti menutupinya. Status lain (expired, closed, ...) diteruskan
+         * ke penelaras biar tersimpan, tapi tidak pernah melunasi.
+         */
+        if (($status['transaction_status'] ?? '') === 'paid'
+            && (int) ($status['gross_amount'] ?? 0) !== $pembayaran->nominal) {
+            Log::warning('Nominal transaksi Mayar tidak cocok saat diperiksa.', [
+                'invoice' => $pembayaran->nomor_invoice,
+                'diharapkan' => $pembayaran->nominal,
+                'diterima' => $status['gross_amount'] ?? null,
+            ]);
+
+            return new TagihanResource($pembayaran->refresh());
+        }
+
+        return new TagihanResource($selaraskan($pembayaran, $status));
     }
 
     /**

@@ -9,12 +9,12 @@ use App\Enums\JenisAksi;
 use App\Enums\TargetAksi;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\SimpanHargaPaketRequest;
-use App\Http\Requests\SimpanPengaturanMidtransRequest;
+use App\Http\Requests\SimpanPengaturanMayarRequest;
 use App\Models\Pengaturan;
 use App\Services\PencatatAktivitas;
 use App\Support\Format;
 use App\Support\HargaPaket;
-use App\Support\KonfigurasiMidtrans;
+use App\Support\KonfigurasiMayar;
 
 class PengaturanController extends Controller
 {
@@ -61,18 +61,18 @@ class PengaturanController extends Controller
     }
 
     /** @return array<string, mixed> */
-    public function midtrans(): array
+    public function mayar(): array
     {
-        return KonfigurasiMidtrans::semua();
+        return KonfigurasiMayar::semua();
     }
 
     /** @return array<string, mixed> */
-    public function simpanMidtrans(SimpanPengaturanMidtransRequest $request): array
+    public function simpanMayar(SimpanPengaturanMayarRequest $request): array
     {
-        $sebelumnya = KonfigurasiMidtrans::semua();
+        $sebelumnya = KonfigurasiMayar::semua();
         $baru = array_merge($sebelumnya, $request->konfigurasi());
 
-        Pengaturan::simpan(Pengaturan::KUNCI_MIDTRANS, $baru);
+        Pengaturan::simpan(Pengaturan::KUNCI_MAYAR, $baru);
 
         $berubah = [];
         if ($sebelumnya['is_production'] !== $baru['is_production']) {
@@ -80,12 +80,8 @@ class PengaturanController extends Controller
                 .' → '.$this->labelMode($baru['is_production']);
         }
 
-        if (($sebelumnya['server_key'] ?? '') !== $baru['server_key']) {
-            $berubah[] = 'server key';
-        }
-
-        if (($sebelumnya['client_key'] ?? '') !== $baru['client_key']) {
-            $berubah[] = 'client key';
+        if (($sebelumnya['api_key'] ?? '') !== $baru['api_key']) {
+            $berubah[] = 'API key';
         }
 
         if (($sebelumnya['timeout'] ?? null) !== $baru['timeout']) {
@@ -96,7 +92,7 @@ class PengaturanController extends Controller
             $this->pencatat->catat(
                 aksi: JenisAksi::PengaturanUbah,
                 targetTipe: TargetAksi::Sistem,
-                deskripsi: 'Mengubah pengaturan pembayaran Midtrans: '.implode(', ', $berubah).'.',
+                deskripsi: 'Mengubah pengaturan pembayaran Mayar: '.implode(', ', $berubah).'.',
             );
         }
 

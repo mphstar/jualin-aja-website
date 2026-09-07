@@ -1,6 +1,6 @@
 import { PageHeader } from '@/components/shared/PageHeader';
 import { FormHargaPaket } from '@/features/pengaturan/FormHargaPaket';
-import { FormPengaturanMidtrans } from '@/features/pengaturan/FormPengaturanMidtrans';
+import { FormPengaturanMayar } from '@/features/pengaturan/FormPengaturanMayar';
 import { FormProfil } from '@/features/pengaturan/FormProfil';
 import { PilihanTema } from '@/features/pengaturan/PilihanTema';
 
@@ -15,7 +15,7 @@ export function HalamanPengaturan() {
             <div className="grid max-w-3xl gap-4">
                 <FormProfil />
                 <PilihanTema />
-                <FormPengaturanMidtrans />
+                <FormPengaturanMayar />
                 <FormHargaPaket />
             </div>
         </>

@@ -7,14 +7,14 @@ namespace App\Http\Requests;
 use Illuminate\Foundation\Http\FormRequest;
 
 /**
- * Konfigurasi kredensial & mode Midtrans dari halaman Pengaturan.
+ * Konfigurasi kredensial & mode Mayar dari halaman Pengaturan.
  *
  * Dua hal yang dipakai bisnis bukan dua hal yang sama dengan yang dipakai
- * validasi: `server_key` yang dikirim (mungkin ditimpa nilai yang disamarkan)
+ * validasi: `api_key` yang dikirim (mungkin ditimpa nilai yang disamarkan)
  * dibaca lewat `konfigurasi()`, sedangkan aturan `sometimes` di atas membuat
  * perubahan sebagian tetap sah — menimpa mode saja tanpa mengetik ulang kunci.
  */
-class SimpanPengaturanMidtransRequest extends FormRequest
+class SimpanPengaturanMayarRequest extends FormRequest
 {
     public function authorize(): bool
     {
@@ -25,8 +25,7 @@ class SimpanPengaturanMidtransRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'server_key' => ['nullable', 'string', 'max:255'],
-            'client_key' => ['nullable', 'string', 'max:255'],
+            'api_key' => ['nullable', 'string', 'max:2048'],
             'is_production' => ['sometimes', 'required', 'boolean'],
             'timeout' => ['nullable', 'integer', 'min:1', 'max:120'],
         ];
@@ -36,12 +35,12 @@ class SimpanPengaturanMidtransRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'string' => 'Kredensial harus berupa teks.',
-            'max' => 'Kredensial terlalu panjang.',
-            'boolean' => 'Nilai mode pembayaran tidak valid.',
-            'integer' => 'Batas waktu harus berupa angka bulat.',
-            'min' => 'Batas waktu minimal 1 detik.',
-            'max' => 'Batas waktu maksimal 120 detik.',
+            'api_key.string' => 'Kredensial harus berupa teks.',
+            'api_key.max' => 'Kredensial terlalu panjang.',
+            'is_production.boolean' => 'Nilai mode pembayaran tidak valid.',
+            'timeout.integer' => 'Batas waktu harus berupa angka bulat.',
+            'timeout.min' => 'Batas waktu minimal 1 detik.',
+            'timeout.max' => 'Batas waktu maksimal 120 detik.',
         ];
     }
 
@@ -55,12 +54,8 @@ class SimpanPengaturanMidtransRequest extends FormRequest
     {
         $data = [];
 
-        if ($this->exists('server_key')) {
-            $data['server_key'] = trim((string) $this->input('server_key'));
-        }
-
-        if ($this->exists('client_key')) {
-            $data['client_key'] = trim((string) $this->input('client_key'));
+        if ($this->exists('api_key')) {
+            $data['api_key'] = trim((string) $this->input('api_key'));
         }
 
         if ($this->exists('is_production')) {

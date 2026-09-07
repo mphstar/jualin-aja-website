@@ -3,9 +3,8 @@ import type { DurasiPaket } from '@/types';
 
 export type HargaPaket = Record<DurasiPaket, number>;
 
-export interface PengaturanMidtrans {
-    server_key: string;
-    client_key: string;
+export interface PengaturanMayar {
+    api_key: string;
     is_production: boolean;
     timeout: number;
 }
@@ -27,19 +26,19 @@ export function simpanHargaPaket(harga: HargaPaket): Promise<HargaPaket> {
     return ganti<HargaPaket>('/pengaturan/harga-paket', harga);
 }
 
-export function ambilPengaturanMidtrans(): Promise<PengaturanMidtrans> {
-    return ambil<PengaturanMidtrans>('/pengaturan/midtrans');
+export function ambilPengaturanMayar(): Promise<PengaturanMayar> {
+    return ambil<PengaturanMayar>('/pengaturan/mayar');
 }
 
 /**
- * Menyimpan konfigurasi Midtrans.
+ * Menyimpan konfigurasi Mayar.
  *
- * Nilai kosong pada server/client key mengartikan pembayaran otomatis mati
- * (server menolak pembuatan tagihan dengan pesan yang mengarahkan ke
- * perpanjangan manual). Perubahan mode dicatat ke log oleh server.
+ * Nilai kosong pada API key mengartikan pembayaran otomatis mati (server
+ * menolak pembuatan tagihan dengan pesan yang mengarahkan ke perpanjangan
+ * manual). Perubahan mode dicatat ke log oleh server.
  */
-export function simpanPengaturanMidtrans(
-    midtrans: PengaturanMidtrans,
-): Promise<PengaturanMidtrans> {
-    return ganti<PengaturanMidtrans>('/pengaturan/midtrans', midtrans);
+export function simpanPengaturanMayar(
+    mayar: PengaturanMayar,
+): Promise<PengaturanMayar> {
+    return ganti<PengaturanMayar>('/pengaturan/mayar', mayar);
 }

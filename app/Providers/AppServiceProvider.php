@@ -3,8 +3,8 @@
 namespace App\Providers;
 
 use App\Contracts\GerbangPembayaran;
-use App\Services\MidtransGerbang;
-use App\Support\KonfigurasiMidtrans;
+use App\Services\MayarGerbang;
+use App\Support\KonfigurasiMayar;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -24,12 +24,12 @@ class AppServiceProvider extends ServiceProvider
         /*
          * Gerbang pembayaran diikat sebagai singleton lewat antarmukanya, jadi
          * uji fitur bisa menukarnya dengan tiruan tanpa satu pun Action tahu —
-         * dan tidak ada satu pun tes yang menembak jaringan Midtrans.
+         * dan tidak ada satu pun tes yang menembak jaringan Mayar.
          */
-        $this->app->singleton(GerbangPembayaran::class, fn (): MidtransGerbang => new MidtransGerbang(
-            serverKey: KonfigurasiMidtrans::serverKey(),
-            produksi: KonfigurasiMidtrans::produksi(),
-            timeout: KonfigurasiMidtrans::timeout(),
+        $this->app->singleton(GerbangPembayaran::class, fn (): MayarGerbang => new MayarGerbang(
+            apiKey: KonfigurasiMayar::apiKey(),
+            produksi: KonfigurasiMayar::produksi(),
+            timeout: KonfigurasiMayar::timeout(),
         ));
     }
 
