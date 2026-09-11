@@ -38,6 +38,7 @@ final readonly class SimpanEbook
         ?UploadedFile $cover = null,
         ?UploadedFile $berkas = null,
         ?int $jumlahHalaman = null,
+        ?int $harga = null,
     ): Ebook {
         $baru = $ebook === null;
         $statusLama = $ebook?->status;
@@ -66,6 +67,10 @@ final readonly class SimpanEbook
 
         if ($jumlahHalaman !== null) {
             $atribut['jumlah_halaman'] = $jumlahHalaman;
+        }
+
+        if ($harga !== null) {
+            $atribut['harga'] = $harga;
         }
 
         // Tanggal terbit dicatat sekali, saat pertama kali naik ke Terbit —

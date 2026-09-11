@@ -41,6 +41,7 @@ class SimpanEbookRequest extends FormRequest
             'deskripsi' => ['required', 'string', 'min:10', 'max:2000'],
             'status' => ['required', Rule::enum(StatusEbook::class)],
             'jumlahHalaman' => ['nullable', 'integer', 'min:1', 'max:5000'],
+            'harga' => ['nullable', 'integer', 'min:0', 'max:1000000'],
             'cover' => ['nullable', 'image', 'max:4096'],
             'berkas' => ['nullable', 'file', 'mimes:pdf', 'max:51200'],
         ];
@@ -106,5 +107,10 @@ class SimpanEbookRequest extends FormRequest
     public function jumlahHalaman(): ?int
     {
         return $this->filled('jumlahHalaman') ? $this->integer('jumlahHalaman') : null;
+    }
+
+    public function harga(): ?int
+    {
+        return $this->filled('harga') ? $this->integer('harga') : null;
     }
 }

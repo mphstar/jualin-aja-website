@@ -7,16 +7,19 @@ use App\Support\KonfigurasiMayar;
 
 it('memakai bawaan .env ketika belum ada nilai yang tersimpan', function (): void {
     config()->set('services.mayar.api_key', 'API-key-bawaan');
+    config()->set('services.mayar.webhook_secret', 'secret-bawaan');
     config()->set('services.mayar.is_production', false);
     config()->set('services.mayar.timeout', 15);
 
     expect(KonfigurasiMayar::semua())->toEqual([
         'api_key' => 'API-key-bawaan',
+        'webhook_secret' => 'secret-bawaan',
         'is_production' => false,
         'timeout' => 15,
     ]);
 
     expect(KonfigurasiMayar::apiKey())->toBe('API-key-bawaan');
+    expect(KonfigurasiMayar::webhookSecret())->toBe('secret-bawaan');
     expect(KonfigurasiMayar::produksi())->toBeFalse();
     expect(KonfigurasiMayar::timeout())->toBe(15);
 });

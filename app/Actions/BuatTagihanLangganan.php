@@ -47,8 +47,25 @@ final readonly class BuatTagihanLangganan
             throw new KesalahanDomain('Harga paket belum disetel. Hubungi dukungan.');
         }
 
-        $pembayaran = DB::transaction(function () use ($toko, $durasi, $saluran, $nominal): Pembayaran {
-            $sekarang = CarbonImmutable::now();
+        // Cek apakah ada tagihan MENUNGGU yang belum kadaluwarsa untuk
+        // durasi + nominal yang sama. Mengembalikan yang sudah ada alih-alih
+        // membuat baru mencegah Mayar menolak 429 "Duplicate request detected".
+        $sekarang = CarbonImmutable::now();
+        $yangAda = Pembayaran::query()
+            ->where('pos_user_id', $toko->id)
+            ->where('tipe', Pembayaran::TIPE_LANGGANAN)
+            ->where('status', StatusPembayaran::Menunggu)
+            ->where('nominal', $nominal)
+            ->whereNull('ebook_id')
+            ->where('batas_bayar', '>', $sekarang)
+            ->orderByDesc('id')
+            ->first();
+
+        if ($yangAda !== null) {
+            return $yangAda;
+        }
+
+        $pembayaran = DB::transaction(function () use ($toko, $durasi, $saluran, $nominal, $sekarang): Pembayaran {
 
             return Pembayaran::query()->create([
                 'nomor_invoice' => (new NomorInvoiceBerikutnya)($sekarang),

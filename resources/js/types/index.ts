@@ -133,6 +133,7 @@ export interface Ebook {
     namaFile?: string;
     ukuranFileBytes?: number;
     jumlahHalaman?: number;
+    harga: number;
     status: StatusEbook;
     tanggalDibuat: string; // ISO
     tanggalTerbit?: string; // ISO

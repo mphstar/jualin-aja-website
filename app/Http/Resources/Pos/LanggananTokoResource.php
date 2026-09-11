@@ -36,10 +36,11 @@ class LanggananTokoResource extends JsonResource
             'ditangguhkan' => $this->ditangguhkan,
             'alasanPenangguhan' => $this->alasan_penangguhan,
             'bolehTransaksi' => $this->langgananBerjalan(),
-            // Pustaka hanya untuk paket Berbayar (Langganan). `langgananBerjalan()`
-            // tidak cukup: akun Trial masih "berjalan" tapi belum membeli, dan
-            // toh tidak boleh membuka Pustaka — jadi pakai `bolehAksesResep()`.
-            'bolehUnduhResep' => $this->bolehAksesResep(),
+            // Pustaka: semua akun boleh MELIHAT katalog. Akses per-konten
+            // diatur oleh tabel `akses_pustaka` (klaim langganan atau beli
+            // satuan), bukan oleh flag ini.
+            'bolehUnduhResep' => true,
+            'langgananAktif' => $this->bolehAksesResep(),
         ];
     }
 }

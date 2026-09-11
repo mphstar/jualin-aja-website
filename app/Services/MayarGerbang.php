@@ -12,6 +12,7 @@ use App\Support\HasilCharge;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\PendingRequest;
+use Illuminate\Http\Client\RequestException;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -41,34 +42,45 @@ final readonly class MayarGerbang implements GerbangPembayaran
         private ?string $apiKey,
         private bool $produksi,
         private int $timeout = 15,
-    ) {}
+    ) {
+    }
 
     public function buatTransaksi(Pembayaran $pembayaran, SaluranBayar $saluran): HasilCharge
     {
-        $pembayaran->loadMissing('posUser');
+        $pembayaran->loadMissing(['posUser', 'ebook']);
         $toko = $pembayaran->posUser;
 
-        $batasBayar = CarbonImmutable::now()->addHours(self::JAM_KEDALUWARSA);
+        $batasBayar = CarbonImmutable::now(config('app.timezone'))->addHours(self::JAM_KEDALUWARSA);
+
+        // expiredAt untuk Mayar harus dalam UTC — Mayar tidak mengenal
+        // timezone lokal.
+        $batasBayarUtc = $batasBayar->setTimezone('UTC');
+
+        $deskripsiItem = $pembayaran->ebook !== null
+            ? 'Pembelian Pustaka: ' . $pembayaran->ebook->judul
+            : 'Langganan Jualin Aja ' . $pembayaran->durasi->label();
 
         $badan = [
             'name' => trim($toko->nama),
             'email' => $toko->email,
             'mobile' => $toko->telepon,
-            'items' => [[
-                'quantity' => 1,
-                'rate' => (int) $pembayaran->nominal,
-                'description' => mb_substr('Langganan Jualin Aja '.$pembayaran->durasi->label(), 0, 255),
-            ]],
-            'description' => mb_substr('Invoice '.$pembayaran->nomor_invoice, 0, 255),
-            'expiredAt' => $batasBayar->toIso8601String(),
+            'items' => [
+                [
+                    'quantity' => 1,
+                    'rate' => (int) $pembayaran->nominal,
+                    'description' => mb_substr($deskripsiItem, 0, 255),
+                ]
+            ],
+            'description' => mb_substr('Invoice ' . $pembayaran->nomor_invoice, 0, 255),
+            'expiredAt' => $batasBayarUtc->toIso8601String(),
             'paymentMethod' => $saluran->value,
             // Id pesanan kita sendiri — dibaca ulang dari transaksi, bukan dari
             // webhook, untuk membuktikan satu pembayaran milik satu invoice.
             'extraData' => ['orderId' => $pembayaran->nomor_invoice],
         ];
 
-        $jawaban = $this->kirim(fn (PendingRequest $http): Response => $http->post(
-            $this->basisApi().'/hl/v2/invoices/create',
+        $jawaban = $this->kirim(fn(PendingRequest $http): Response => $http->post(
+            $this->basisApi() . '/hl/v2/invoices/create',
             $badan,
         ));
 
@@ -81,11 +93,20 @@ final readonly class MayarGerbang implements GerbangPembayaran
                 $pesan .= ' — periksa API key Mayar dan mode sandbox/produksinya.';
             }
 
+            // 409 "already exist" bisa muncul ketika sebuah coba-ulang koneksi
+            // berhasil sampai ke Mayar padahal jawaban yang pertama hilang di
+            // tengah jalan. Transaksinya SUDAH ada di sisi Mayar — jangan
+            // membingungkan pembeli dengan pesan mentah Mayar.
+            if (($jawaban['statusCode'] ?? null) === 409) {
+                $pesan = 'Tagihan untuk pesanan ini sudah pernah dibuat di Mayar. '
+                    . 'Periksa ulang riwayat pembayaran atau hubungi dukungan.';
+            }
+
             if (($jawaban['statusCode'] ?? null) === 429) {
                 $pesan .= ' Coba lagi beberapa saat.';
             }
 
-            throw new KesalahanDomain('Gagal membuat tagihan: '.$pesan);
+            throw new KesalahanDomain('Gagal membuat tagihan: ' . $pesan);
         }
 
         $instruksi = $this->parsePaymentDetail($data['paymentDetail'] ?? null);
@@ -106,16 +127,32 @@ final readonly class MayarGerbang implements GerbangPembayaran
     public function periksaStatus(Pembayaran $pembayaran): array
     {
         $transactionId = (string) $pembayaran->mayar_transaction_id;
+        $orderId = (string) $pembayaran->mayar_order_id;
 
-        if ($transactionId === '') {
-            return ['transaction_status' => '', 'data' => []];
+        if ($transactionId !== '') {
+            try {
+                $jawaban = $this->kirim(fn(PendingRequest $http): Response => $http->get(
+                    sprintf('%s/hl/v2/transactions/%s', $this->basisApi(), rawurlencode($transactionId)),
+                ));
+
+                return $this->normalkan($jawaban);
+            } catch (KesalahanDomain $e) {
+                // Jika lookup transaksi gagal tetapi order_id (invoice id) tersedia, coba fallback ke invoice endpoint
+                if ($orderId === '') {
+                    throw $e;
+                }
+            }
         }
 
-        $jawaban = $this->kirim(fn (PendingRequest $http): Response => $http->get(
-            sprintf('%s/hl/v2/transactions/%s', $this->basisApi(), rawurlencode($transactionId)),
-        ));
+        if ($orderId !== '') {
+            $jawaban = $this->kirim(fn(PendingRequest $http): Response => $http->get(
+                sprintf('%s/hl/v2/invoices/%s', $this->basisApi(), rawurlencode($orderId)),
+            ));
 
-        return $this->normalkan($jawaban);
+            return $this->normalkan($jawaban);
+        }
+
+        return ['transaction_status' => '', 'data' => []];
     }
 
     /**
@@ -123,8 +160,8 @@ final readonly class MayarGerbang implements GerbangPembayaran
      *
      * Mayar belum menandatangani webhooknya — tidak ada `signature_key`. Bentuk
      * yang diuji di sini hanyalah peluru pertama; yang mempertegas keasliannya
-     * adalah bahwa `transactionId` itu memang dibuat kita dan statusnya dibaca
-     * ulang dari `GET /transactions/{id}`, bukan dari isi webhook.
+     * adalah bahwa `transactionId` atau `invoiceId` itu memang dibuat kita dan statusnya dibaca
+     * ulang dari gerbang Mayar, bukan dari isi webhook.
      *
      * @param  array<string, mixed>  $payload
      */
@@ -132,7 +169,16 @@ final readonly class MayarGerbang implements GerbangPembayaran
     {
         $data = is_array($payload['data'] ?? null) ? $payload['data'] : [];
 
-        $id = (string) ($data['transactionId'] ?? $data['id'] ?? '');
+        $id = (string) (
+            $data['transactionId']
+            ?? $data['transaction_id']
+            ?? $data['invoiceId']
+            ?? $data['invoice_id']
+            ?? $data['id']
+            ?? $data['orderId']
+            ?? $data['order_id']
+            ?? ''
+        );
 
         return is_string($payload['event'] ?? null)
             && $payload['event'] !== ''
@@ -168,7 +214,7 @@ final readonly class MayarGerbang implements GerbangPembayaran
 
             return [
                 'tipe' => 'qr_code',
-                'qrUrl' => 'https://api.qrserver.com/v1/create-qr-code/?size=300x300&data='.rawurlencode($qr),
+                'qrUrl' => 'https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=' . rawurlencode($qr),
                 'kodeBayar' => null,
                 'kodePerusahaan' => null,
                 'aksi' => [],
@@ -218,6 +264,9 @@ final readonly class MayarGerbang implements GerbangPembayaran
     /**
      * Bentuk payload yang dipahami `SelaraskanStatusPembayaran`.
      *
+     * Mendukung format respons dari endpoint transaksi (/transactions/{id})
+     * maupun endpoint invoice (/invoices/{id}).
+     *
      * @param  array<string, mixed>  $jawaban
      * @return array<string, mixed>
      */
@@ -225,12 +274,34 @@ final readonly class MayarGerbang implements GerbangPembayaran
     {
         $data = is_array($jawaban['data'] ?? null) ? $jawaban['data'] : [];
 
+        $transaksiPertama = is_array($data['transactions'] ?? null) && count($data['transactions']) > 0 && is_array($data['transactions'][0])
+            ? $data['transactions'][0]
+            : [];
+
+        $transactionId = (string) (
+            $transaksiPertama['id']
+            ?? $data['transactionId']
+            ?? $data['transaction_id']
+            ?? $data['id']
+            ?? ''
+        );
+
+        $paymentMethod = $transaksiPertama['paymentMethod']
+            ?? $data['paymentMethod']
+            ?? $data['payment_method']
+            ?? null;
+
+        $extraData = $data['extraData']
+            ?? $data['extra_data']
+            ?? $transaksiPertama['extraData']
+            ?? null;
+
         return [
-            'transaction_status' => (string) ($data['status'] ?? ''),
-            'transaction_id' => (string) ($data['id'] ?? ''),
-            'gross_amount' => (int) ($data['amount'] ?? 0),
-            'payment_method' => $data['paymentMethod'] ?? null,
-            'extraData' => $data['extraData'] ?? null,
+            'transaction_status' => (string) ($data['status'] ?? $transaksiPertama['status'] ?? ''),
+            'transaction_id' => $transactionId,
+            'gross_amount' => (int) ($data['amount'] ?? $transaksiPertama['amount'] ?? 0),
+            'payment_method' => $paymentMethod,
+            'extraData' => $extraData,
             'data' => $data,
         ];
     }
@@ -254,10 +325,20 @@ final readonly class MayarGerbang implements GerbangPembayaran
                     ->acceptJson()
                     ->asJson()
                     ->timeout($this->timeout)
-                    // Dua kali coba lagi dengan jeda: kegagalan jaringan
-                    // sesaat tidak boleh terbaca sebagai penolakan gerbang di
-                    // layar pengguna.
-                    ->retry(2, 200, throw: false),
+                    // Dua kali coba lagi dengan jeda: kegagalan jaringan sesaat
+                    // tidak boleh terbaca sebagai penolakan gerbang di layar
+                    // pengguna. Coba-ulang hanya untuk putusnya koneksi — TIDAK
+                    // pernah untuk jawaban HTTP dari Mayar. Mengulang create
+                    // (atau status yang tertolak) akan mengirim badan yang sama
+                    // lagi, dan deteksi duplikat Mayar membalas 429 "Duplicate
+                    // request" atau 409 "already exist" untuk transaksi yang
+                    // sudah tercatat — persis galat "duplikasi" yang dulu muncul.
+                    ->retry(
+                        2,
+                        200,
+                        fn(\Throwable $galat): bool => !$galat instanceof RequestException,
+                        throw: false,
+                    ),
             );
         } catch (ConnectionException $e) {
             Log::warning('Mayar tidak bisa dihubungi.', ['pesan' => $e->getMessage()]);
@@ -268,7 +349,7 @@ final readonly class MayarGerbang implements GerbangPembayaran
         /** @var array<string, mixed> $badan */
         $badan = $respons->json() ?? [];
 
-        if (! $respons->successful()) {
+        if (!$respons->successful()) {
             Log::warning('Mayar menolak permintaan.', [
                 'basis' => $this->basisApi(),
                 'status' => $respons->status(),

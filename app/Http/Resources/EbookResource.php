@@ -34,6 +34,7 @@ class EbookResource extends JsonResource
             'namaFile' => $this->nama_berkas,
             'ukuranFileBytes' => $this->ukuran_berkas_bytes,
             'jumlahHalaman' => $this->jumlah_halaman,
+            'harga' => $this->harga,
             'status' => $this->status->value,
             'tanggalDibuat' => $this->created_at->toISOString(),
             'tanggalTerbit' => $this->tanggal_terbit?->toISOString(),

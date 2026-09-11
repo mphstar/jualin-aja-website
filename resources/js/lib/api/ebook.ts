@@ -31,6 +31,7 @@ export interface MasukanEbook {
     deskripsi: string;
     status: StatusEbook;
     jumlahHalaman?: number;
+    harga?: number;
     cover?: File;
     berkas?: File;
 }

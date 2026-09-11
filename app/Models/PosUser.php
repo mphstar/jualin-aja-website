@@ -118,6 +118,12 @@ class PosUser extends Authenticatable
         return $this->hasMany(UnduhanEbook::class);
     }
 
+    /** @return HasMany<AksesPustaka, $this> */
+    public function aksesPustaka(): HasMany
+    {
+        return $this->hasMany(AksesPustaka::class);
+    }
+
     /** @return HasMany<Kategori, $this> */
     public function kategori(): HasMany
     {
@@ -179,6 +185,45 @@ class PosUser extends Authenticatable
     public function bolehTransaksi(?CarbonInterface $sekarang = null): bool
     {
         return FiturLangganan::bolehTransaksi($this->versiLangganan($sekarang));
+    }
+
+    /**
+     * Apakah toko memiliki akses ke ebook tertentu (klaim atau beli).
+     */
+    public function punyaAksesEbook(int $ebookId): bool
+    {
+        $akses = $this->aksesPustaka->firstWhere('ebook_id', $ebookId);
+
+        if ($akses === null) {
+            return false;
+        }
+
+        if ($akses->tipe_akses === AksesPustaka::TIPE_BELI_SATUAN) {
+            return true;
+        }
+
+        // Akses via klaim langganan membutuhkan status langganan berbayar aktif
+        return $this->versiLangganan() === VersiLangganan::Langganan;
+    }
+
+    /**
+     * Apakah toko sudah mengklaim 1 gratis untuk jenis konten ini (Resep / Prompt).
+     */
+    public function sudahKlaimJenis(JenisKonten $jenis): bool
+    {
+        return $this->aksesPustaka
+            ->where('jenis', $jenis->value)
+            ->where('tipe_akses', AksesPustaka::TIPE_KLAIM_LANGGANAN)
+            ->isNotEmpty();
+    }
+
+    /**
+     * Apakah toko berhak mengklaim 1 gratis untuk jenis konten ini (Resep / Prompt).
+     */
+    public function bolehKlaimJenis(JenisKonten $jenis): bool
+    {
+        return $this->versiLangganan() === VersiLangganan::Langganan
+            && ! $this->sudahKlaimJenis($jenis);
     }
 
     public function batasMaksimalProduk(?CarbonInterface $sekarang = null): ?int

@@ -34,6 +34,11 @@ final class KonfigurasiMayar
         return (string) (self::semua()['api_key'] ?? '');
     }
 
+    public static function webhookSecret(): string
+    {
+        return (string) (self::semua()['webhook_secret'] ?? '');
+    }
+
     public static function produksi(): bool
     {
         return (bool) (self::semua()['is_production'] ?? false);
@@ -53,6 +58,7 @@ final class KonfigurasiMayar
     {
         return [
             'api_key' => (string) config('services.mayar.api_key', ''),
+            'webhook_secret' => (string) config('services.mayar.webhook_secret', ''),
             'is_production' => (bool) config('services.mayar.is_production', false),
             'timeout' => (int) config('services.mayar.timeout', 15),
         ];

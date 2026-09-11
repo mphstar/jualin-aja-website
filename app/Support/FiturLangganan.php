@@ -28,16 +28,19 @@ final class FiturLangganan
     }
 
     /**
-     * Apakah versi ini boleh mengakses katalog resep ebook?
+     * Apakah versi ini boleh melihat katalog resep ebook?
+     *
+     * Semua versi boleh MELIHAT katalog — akses per-konten diatur oleh
+     * tabel `akses_pustaka` (klaim langganan atau beli satuan).
      *
      * Rules:
-     * - Gratis: ❌ Tidak
-     * - Trial: ❌ Tidak
-     * - Langganan: ✅ Ya
+     * - Gratis: ✅ Ya (lihat saja, konten terkunci)
+     * - Trial: ✅ Ya (lihat saja, konten terkunci)
+     * - Langganan: ✅ Ya (+ jatah 1 Resep & 1 Prompt gratis)
      */
     public static function bolehAksesResep(VersiLangganan $versi): bool
     {
-        return $versi === VersiLangganan::Langganan;
+        return true;
     }
 
     /**

@@ -37,11 +37,13 @@ use Illuminate\Support\Carbon;
  * @property string|null $mayar_order_id
  * @property string|null $mayar_transaction_id
  * @property array<string, mixed>|null $mayar_payload
- * @property Carbon|null $dibayar_pada
+ * @property string $tipe
+ * @property int|null $ebook_id
  * @property-read PosUser $posUser
+ * @property-read Ebook|null $ebook
  */
 #[Fillable([
-    'nomor_invoice', 'pos_user_id', 'langganan_id', 'nominal', 'durasi',
+    'nomor_invoice', 'pos_user_id', 'langganan_id', 'nominal', 'durasi', 'tipe', 'ebook_id',
     'metode', 'saluran', 'status', 'tanggal', 'batas_bayar',
     'kedaluwarsa_saluran', 'berlaku_sampai', 'kode_bayar', 'kode_perusahaan',
     'qr_url', 'tautan_bayar', 'instruksi_bayar', 'catatan',
@@ -51,6 +53,10 @@ class Pembayaran extends Model
 {
     /** @use HasFactory<PembayaranFactory> */
     use HasFactory;
+
+    public const string TIPE_LANGGANAN = 'LANGGANAN';
+
+    public const string TIPE_PUSTAKA_SATUAN = 'PUSTAKA_SATUAN';
 
     protected $table = 'pembayaran';
 
@@ -76,6 +82,12 @@ class Pembayaran extends Model
     public function posUser(): BelongsTo
     {
         return $this->belongsTo(PosUser::class);
+    }
+
+    /** @return BelongsTo<Ebook, $this> */
+    public function ebook(): BelongsTo
+    {
+        return $this->belongsTo(Ebook::class);
     }
 
     public function lewatBatas(): bool

@@ -8,6 +8,7 @@ use App\Enums\SaluranBayar;
 use App\Enums\StatusPembayaran;
 use App\Exceptions\KesalahanDomain;
 use App\Models\Pembayaran;
+use App\Models\Pengaturan;
 use App\Models\PosUser;
 use App\Services\MayarGerbang;
 use App\Support\HasilCharge;
@@ -66,8 +67,9 @@ final class GerbangTiruan implements GerbangPembayaran
     {
         $data = $payload['data'] ?? [];
 
-        return is_array($data)
-            && ($data['transactionId'] ?? null) !== null;
+        $id = $data['transactionId'] ?? $data['transaction_id'] ?? $data['invoiceId'] ?? $data['invoice_id'] ?? $data['id'] ?? $data['orderId'] ?? null;
+
+        return is_array($data) && $id !== null;
     }
 }
 
@@ -339,6 +341,55 @@ it('tidak menurunkan status invoice yang sudah lunas', function (): void {
     $this->postJson(route('api.mayar.notifikasi', ['rahasia' => rahasiaWebhook()]), $bagus)->assertOk();
 
     expect($tagihan->refresh()->status)->toBe(StatusPembayaran::Lunas);
+});
+
+it('memperpanjang langganan menggunakan webhook secret yang disimpan di pengaturan database', function (): void {
+    Pengaturan::simpan(Pengaturan::KUNCI_MAYAR, [
+        'webhook_secret' => 'SecretKhususAdmin1234567890abcdef',
+    ]);
+    [$toko, $tagihan] = tagihanMenunggu();
+
+    $this->postJson(route('api.mayar.notifikasi', ['rahasia' => 'SecretKhususAdmin1234567890abcdef']), [
+        'event' => 'invoice.paid',
+        'data' => [
+            'invoiceId' => $tagihan->mayar_order_id,
+            'status' => 'paid',
+            'amount' => 99_000,
+            'paymentMethod' => 'QRIS',
+        ],
+    ])->assertOk();
+
+    expect($tagihan->refresh()->status)->toBe(StatusPembayaran::Lunas);
+});
+
+it('mencocokkan pembayaran via invoiceId atau extraData saat transactionId baru', function (): void {
+    config()->set('services.mayar.webhook_secret', rahasiaWebhook());
+    [$toko, $tagihan] = tagihanMenunggu();
+    $tagihan->update(['mayar_transaction_id' => null]);
+
+    /** @var GerbangTiruan $gerbang */
+    $gerbang = app(GerbangPembayaran::class);
+    $gerbang->status = [
+        'transaction_status' => 'paid',
+        'transaction_id' => 'trx-baru-dari-mayar',
+        'gross_amount' => 99_000,
+        'extraData' => ['orderId' => $tagihan->nomor_invoice],
+        'data' => ['id' => 'trx-baru-dari-mayar', 'status' => 'paid'],
+    ];
+
+    $this->postJson(route('api.mayar.notifikasi', ['rahasia' => rahasiaWebhook()]), [
+        'event' => 'payment.settled',
+        'data' => [
+            'id' => 'trx-baru-dari-mayar',
+            'invoiceId' => $tagihan->mayar_order_id,
+            'extraData' => ['orderId' => $tagihan->nomor_invoice],
+            'status' => 'paid',
+            'amount' => 99_000,
+        ],
+    ])->assertOk();
+
+    expect($tagihan->refresh()->status)->toBe(StatusPembayaran::Lunas)
+        ->and($tagihan->mayar_transaction_id)->toBe('trx-baru-dari-mayar');
 });
 
 it('menjawab 200 untuk invoice yang tidak dikenali', function (): void {

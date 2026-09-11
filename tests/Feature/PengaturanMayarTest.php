@@ -10,6 +10,7 @@ it('mengembalikan nilai bawaan dari konfigurasi ketika belum pernah disimpan', f
     admin();
 
     config()->set('services.mayar.api_key', 'API-key-bawaan');
+    config()->set('services.mayar.webhook_secret', 'secret-bawaan');
     config()->set('services.mayar.is_production', false);
     config()->set('services.mayar.timeout', 15);
 
@@ -17,6 +18,7 @@ it('mengembalikan nilai bawaan dari konfigurasi ketika belum pernah disimpan', f
         ->assertOk()
         ->assertJson([
             'api_key' => 'API-key-bawaan',
+            'webhook_secret' => 'secret-bawaan',
             'is_production' => false,
             'timeout' => 15,
         ]);
@@ -27,12 +29,14 @@ it('menyimpan konfigurasi Mayar dan mencetaknya ke log', function (): void {
 
     $this->putJson('/api/v1/pengaturan/mayar', [
         'api_key' => 'API-key-abc123',
+        'webhook_secret' => 'secret-123',
         'is_production' => false,
         'timeout' => 30,
     ])
         ->assertOk()
         ->assertJson([
             'api_key' => 'API-key-abc123',
+            'webhook_secret' => 'secret-123',
             'is_production' => false,
             'timeout' => 30,
         ]);
@@ -40,6 +44,7 @@ it('menyimpan konfigurasi Mayar dan mencetaknya ke log', function (): void {
     expect(Pengaturan::query()->find(Pengaturan::KUNCI_MAYAR)?->nilai)
         ->toEqual([
             'api_key' => 'API-key-abc123',
+            'webhook_secret' => 'secret-123',
             'is_production' => false,
             'timeout' => 30,
         ])

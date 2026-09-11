@@ -84,6 +84,10 @@ class PengaturanController extends Controller
             $berubah[] = 'API key';
         }
 
+        if (($sebelumnya['webhook_secret'] ?? '') !== ($baru['webhook_secret'] ?? '')) {
+            $berubah[] = 'webhook secret';
+        }
+
         if (($sebelumnya['timeout'] ?? null) !== $baru['timeout']) {
             $berubah[] = 'batas waktu';
         }

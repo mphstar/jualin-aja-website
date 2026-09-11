@@ -32,11 +32,12 @@ use Illuminate\Support\Facades\Storage;
  * @property StatusEbook $status
  * @property Carbon|null $tanggal_terbit
  * @property int $jumlah_unduhan
+ * @property int $harga
  * @property Carbon $created_at
  */
 #[Fillable([
     'jenis', 'judul', 'slug', 'kategori', 'kategori_prompt', 'deskripsi', 'cover_path', 'berkas_path',
-    'nama_berkas', 'ukuran_berkas_bytes', 'jumlah_halaman', 'status',
+    'nama_berkas', 'ukuran_berkas_bytes', 'jumlah_halaman', 'status', 'harga',
     'tanggal_terbit', 'jumlah_unduhan',
 ])]
 class Ebook extends Model
@@ -54,11 +55,18 @@ class Ebook extends Model
             'kategori' => KategoriEbook::class,
             'kategori_prompt' => KategoriPrompt::class,
             'status' => StatusEbook::class,
+            'harga' => 'integer',
             'tanggal_terbit' => 'datetime',
             'ukuran_berkas_bytes' => 'integer',
             'jumlah_halaman' => 'integer',
             'jumlah_unduhan' => 'integer',
         ];
+    }
+
+    /** @return HasMany<AksesPustaka, $this> */
+    public function aksesPustaka(): HasMany
+    {
+        return $this->hasMany(AksesPustaka::class);
     }
 
     /** @return HasMany<UnduhanEbook, $this> */

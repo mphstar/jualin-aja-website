@@ -96,6 +96,7 @@ class EbookController extends Controller
             cover: $request->cover(),
             berkas: $request->berkas(),
             jumlahHalaman: $request->jumlahHalaman(),
+            harga: $request->harga(),
         ));
     }
 
@@ -112,6 +113,7 @@ class EbookController extends Controller
             cover: $request->cover(),
             berkas: $request->berkas(),
             jumlahHalaman: $request->jumlahHalaman(),
+            harga: $request->harga(),
         ));
     }
 

@@ -1,9 +1,12 @@
 import {
+    CheckIcon,
+    CopyIcon,
     EyeIcon,
     EyeOffIcon,
     InfoIcon,
     Loader2Icon,
     ShieldCheckIcon,
+    WebhookIcon,
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
@@ -41,6 +44,8 @@ export function FormPengaturanMayar() {
     const [nilai, setNilai] = useState<PengaturanMayar>(mayar);
     const [nilaiTerakhir, setNilaiTerakhir] = useState(mayar);
     const [tampilkanKunci, setTampilkanKunci] = useState(false);
+    const [tampilkanSecret, setTampilkanSecret] = useState(false);
+    const [sudahSalin, setSudahSalin] = useState(false);
 
     // Sinkronkan isian saat nilai tiba dari server atau berubah setelah disimpan.
     if (mayar !== nilaiTerakhir) {
@@ -48,17 +53,44 @@ export function FormPengaturanMayar() {
         setNilai(mayar);
     }
 
+    const secretBersih = (nilai.webhook_secret ?? '').trim();
+    const secretBawaanBersih = (mayar.webhook_secret ?? '').trim();
+
     const berubah =
         nilai.api_key !== mayar.api_key ||
+        secretBersih !== secretBawaanBersih ||
         nilai.is_production !== mayar.is_production ||
         nilai.timeout !== mayar.timeout;
 
     const kunciKosong = nilai.api_key.trim() === '';
 
+    const webhookUrl =
+        typeof window !== 'undefined'
+            ? `${window.location.origin}/api/mayar/notifikasi/${secretBersih || '<WEBHOOK_SECRET>'}`
+            : `/api/mayar/notifikasi/${secretBersih || '<WEBHOOK_SECRET>'}`;
+
+    async function salinWebhookUrl() {
+        if (!secretBersih) {
+            toast.error('Isi Webhook Secret terlebih dahulu.');
+            return;
+        }
+        try {
+            await navigator.clipboard.writeText(
+                `${window.location.origin}/api/mayar/notifikasi/${secretBersih}`,
+            );
+            setSudahSalin(true);
+            toast.success('URL Webhook berhasil disalin');
+            setTimeout(() => setSudahSalin(false), 2000);
+        } catch {
+            toast.error('Gagal menyalin ke papan klip.');
+        }
+    }
+
     async function simpan() {
         try {
             await simpanMayar({
                 api_key: nilai.api_key.trim(),
+                webhook_secret: secretBersih,
                 is_production: nilai.is_production,
                 timeout: Number(nilai.timeout) || 15,
             });
@@ -77,7 +109,7 @@ export function FormPengaturanMayar() {
             <CardHeader>
                 <CardTitle className="text-base">Pembayaran Mayar</CardTitle>
                 <p className="text-sm text-muted-foreground">
-                    Kredensial dan mode (sandbox / produksi) gerbang pembayaran.
+                    Kredensial, webhook secret, dan mode (sandbox / produksi) gerbang pembayaran.
                 </p>
             </CardHeader>
 
@@ -129,6 +161,74 @@ export function FormPengaturanMayar() {
                         </div>
                         <p className="text-xs text-muted-foreground">
                             Diambil dari panel Mayar, menu Integration / API.
+                        </p>
+                    </div>
+
+                    <div className="grid gap-2">
+                        <Label htmlFor="mayar-webhook-secret">Webhook Secret</Label>
+                        <div className="relative">
+                            <Input
+                                id="mayar-webhook-secret"
+                                type={tampilkanSecret ? 'text' : 'password'}
+                                autoComplete="off"
+                                spellCheck={false}
+                                placeholder="Contoh: rahasia_webhook_mayar_anda_123"
+                                value={nilai.webhook_secret ?? ''}
+                                onChange={(e) =>
+                                    setNilai((n) => ({
+                                        ...n,
+                                        webhook_secret: e.target.value,
+                                    }))
+                                }
+                            />
+                            <button
+                                type="button"
+                                onClick={() => setTampilkanSecret((v) => !v)}
+                                aria-label={
+                                    tampilkanSecret
+                                        ? 'Sembunyikan secret'
+                                        : 'Tampilkan secret'
+                                }
+                                className="absolute top-1/2 right-3 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                            >
+                                {tampilkanSecret ? (
+                                    <EyeOffIcon className="size-4" />
+                                ) : (
+                                    <EyeIcon className="size-4" />
+                                )}
+                            </button>
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                            Kunci rahasia untuk memvalidasi webhook notifikasi dari Mayar.
+                        </p>
+                    </div>
+
+                    <div className="rounded-md border bg-muted/30 p-3">
+                        <div className="flex items-center justify-between gap-2 mb-1.5">
+                            <div className="flex items-center gap-2 text-sm font-medium">
+                                <WebhookIcon className="size-4 text-primary" />
+                                <span>URL Webhook Mayar</span>
+                            </div>
+                            <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                className="h-7 gap-1.5 text-xs"
+                                onClick={salinWebhookUrl}
+                            >
+                                {sudahSalin ? (
+                                    <CheckIcon className="size-3.5 text-green-600" />
+                                ) : (
+                                    <CopyIcon className="size-3.5" />
+                                )}
+                                {sudahSalin ? 'Tersalin' : 'Salin URL'}
+                            </Button>
+                        </div>
+                        <code className="block rounded bg-background p-2 text-xs font-mono break-all text-muted-foreground select-all">
+                            {webhookUrl}
+                        </code>
+                        <p className="mt-1.5 text-xs text-muted-foreground">
+                            Pasang URL ini pada menu <strong>Integration → Webhook</strong> di dashboard Mayar agar status pembayaran tersinkron otomatis ke database saat pembayaran lunas.
                         </p>
                     </div>
 

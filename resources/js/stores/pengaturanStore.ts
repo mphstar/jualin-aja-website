@@ -5,6 +5,7 @@ import { HARGA_PAKET_DEFAULT } from '@/lib/konstanta';
 
 export const PENGATURAN_MAYAR_DEFAULT: PengaturanMayar = {
     api_key: '',
+    webhook_secret: '',
     is_production: false,
     timeout: 15,
 };

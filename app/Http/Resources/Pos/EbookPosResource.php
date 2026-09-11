@@ -11,23 +11,30 @@ use Illuminate\Http\Resources\Json\JsonResource;
 /**
  * Ebook resep dari sudut pandang pemilik toko.
  *
- * Berbeda dari EbookResource milik panel admin: tidak ada `status`, tidak ada
- * `jumlahUnduhan` seluruh platform, dan `fileUrl` hanya terisi kalau langganan
- * yang bersangkutan memang masih berjalan. Mengirim tautan berkas ke akun
- * kedaluwarsa berarti kuncinya cuma ada di tampilan.
+ * Field `terbuka`, `statusAkses`, dan `bisaKlaim` menentukan tombol aksi
+ * di aplikasi mobile: klaim jatah langganan, beli satuan, atau langsung buka.
  *
  * @mixin Ebook
  */
 class EbookPosResource extends JsonResource
 {
-    public function __construct(Ebook $ebook, private readonly bool $bolehUnduh)
-    {
+    /**
+     * @param  bool  $bolehUnduh  Sudah punya akses (klaim atau beli).
+     * @param  bool  $bisaKlaim  Jatah klaim untuk jenis ini masih tersedia.
+     */
+    public function __construct(
+        Ebook $ebook,
+        private readonly bool $bolehUnduh,
+        private readonly bool $bisaKlaim = false,
+    ) {
         parent::__construct($ebook);
     }
 
     /** @return array<string, mixed> */
     public function toArray(Request $request): array
     {
+        $terbuka = $this->bolehUnduh;
+
         return [
             'id' => (string) $this->id,
             'jenis' => $this->jenis->value,
@@ -42,11 +49,27 @@ class EbookPosResource extends JsonResource
             'ukuranMb' => $this->ukuran_berkas_bytes === null
                 ? null
                 : round($this->ukuran_berkas_bytes / 1_048_576, 1),
-            'bolehUnduh' => $this->bolehUnduh,
-            'fileUrl' => $this->bolehUnduh
+            'harga' => $this->harga,
+            'terbuka' => $terbuka,
+            'statusAkses' => $this->hitungStatusAkses($terbuka),
+            'bisaKlaim' => $this->bisaKlaim,
+            'fileUrl' => $terbuka
                 ? $this->urlBerkas($this->berkas_path, $request)
                 : null,
         ];
+    }
+
+    private function hitungStatusAkses(bool $terbuka): string
+    {
+        if ($terbuka) {
+            return 'TERBUKA';
+        }
+
+        if ($this->bisaKlaim) {
+            return 'BISA_KLAIM';
+        }
+
+        return 'TERKUNCI';
     }
 
     /**

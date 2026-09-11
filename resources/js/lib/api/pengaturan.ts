@@ -5,6 +5,7 @@ export type HargaPaket = Record<DurasiPaket, number>;
 
 export interface PengaturanMayar {
     api_key: string;
+    webhook_secret?: string;
     is_production: boolean;
     timeout: number;
 }

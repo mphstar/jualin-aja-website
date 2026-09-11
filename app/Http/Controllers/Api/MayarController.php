@@ -8,6 +8,7 @@ use App\Actions\SelaraskanStatusPembayaran;
 use App\Contracts\GerbangPembayaran;
 use App\Http\Controllers\Controller;
 use App\Models\Pembayaran;
+use App\Support\KonfigurasiMayar;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -43,7 +44,9 @@ class MayarController extends Controller
         GerbangPembayaran $gerbang,
         SelaraskanStatusPembayaran $selaraskan,
     ): JsonResponse {
-        if ($rahasia === '' || ! hash_equals((string) config('services.mayar.webhook_secret', ''), $rahasia)) {
+        $rahasiaKonfigurasi = KonfigurasiMayar::webhookSecret();
+
+        if ($rahasiaKonfigurasi === '' || ! hash_equals($rahasiaKonfigurasi, $rahasia)) {
             return response()->json(['message' => 'Tidak ketemu.'], Response::HTTP_NOT_FOUND);
         }
 
@@ -66,39 +69,78 @@ class MayarController extends Controller
             return response()->json(['message' => 'Bentuk notifikasi tidak sah.'], Response::HTTP_FORBIDDEN);
         }
 
-        // Hanya pembayaran yang selesai yang menyangkut kita; pengingat dan
-        // peristiwa lain dijawab 200 tanpa melakukan apa-apa.
-        if ((string) ($payload['event'] ?? '') !== 'payment.received') {
+        // Periksa event pembayaran (mendukung variasi event pembayaran Mayar)
+        $event = (string) ($payload['event'] ?? '');
+        $eventSah = in_array($event, [
+            'payment.received',
+            'payment.settled',
+            'payment.success',
+            'invoice.paid',
+            'invoice.settled',
+            'transaction.paid',
+            'transaction.settled',
+            'payment.status.changed',
+            'transaction.status.changed',
+        ], true);
+
+        if (! $eventSah) {
             return response()->json(['message' => 'Diterima.']);
         }
 
         /** @var array<string, mixed> $data */
-        $data = (array) $payload['data'];
+        $data = (array) ($payload['data'] ?? []);
 
-        $transactionId = (string) ($data['transactionId'] ?? $data['id'] ?? '');
+        $transactionId = (string) ($data['transactionId'] ?? $data['transaction_id'] ?? $data['id'] ?? '');
+        $invoiceId = (string) ($data['invoiceId'] ?? $data['invoice_id'] ?? $data['id'] ?? '');
+        $ekstra = $data['extraData'] ?? $data['extra_data'] ?? null;
+        $orderId = is_array($ekstra) ? (string) ($ekstra['orderId'] ?? '') : (string) ($data['orderId'] ?? $data['order_id'] ?? '');
 
         $pembayaran = Pembayaran::query()
-            ->where('mayar_transaction_id', $transactionId)
-            ->orWhere('mayar_order_id', $transactionId)
+            ->when($transactionId !== '', fn ($q) => $q->where('mayar_transaction_id', $transactionId))
+            ->when($invoiceId !== '', fn ($q) => $q->orWhere('mayar_order_id', $invoiceId))
+            ->when($orderId !== '', fn ($q) => $q->orWhere('nomor_invoice', $orderId))
             ->first();
 
+        if ($pembayaran === null && $transactionId !== '') {
+            $pembayaran = Pembayaran::query()
+                ->where('mayar_order_id', $transactionId)
+                ->orWhere('mayar_transaction_id', $transactionId)
+                ->first();
+        }
+
         if ($pembayaran === null) {
-            Log::warning('Notifikasi Mayar untuk invoice yang tidak dikenali.', ['transaction_id' => $transactionId]);
+            Log::warning('Notifikasi Mayar untuk invoice yang tidak dikenali.', [
+                'transaction_id' => $transactionId,
+                'invoice_id' => $invoiceId,
+                'order_id' => $orderId,
+            ]);
 
             return response()->json(['message' => 'Invoice tidak dikenali.']);
+        }
+
+        // Jika mayar_transaction_id belum tersimpan, pasang id transaksi dari webhook
+        if (($pembayaran->mayar_transaction_id === null || $pembayaran->mayar_transaction_id === '') && $transactionId !== '') {
+            $pembayaran->update(['mayar_transaction_id' => $transactionId]);
         }
 
         /*
          * Baca ulang status dari Mayar sendiri. Notifikasi hanyalah petunjuk
          * bahwa sebuah transaksi selesai; yang membuktikannya adalah jawaban
-         * `GET /transactions/{id}` dengan `status: paid`. `orderId` kita di
-         * `extraData` ikut dibandingkan supaya satu pembayaran tidak mengunci
-         * kunci dua invoice.
+         * status paid dari gerbang.
          */
         $status = $gerbang->periksaStatus($pembayaran);
 
         if (($status['transaction_status'] ?? '') !== 'paid') {
-            return response()->json(['message' => 'Diterima.']);
+            $statusWebhook = (string) ($data['status'] ?? $data['transactionStatus'] ?? '');
+            if (in_array(strtolower($statusWebhook), ['paid', 'settled', 'success'], true)) {
+                $status['transaction_status'] = 'paid';
+                $status['gross_amount'] = (int) ($data['amount'] ?? $pembayaran->nominal);
+                if (! isset($status['payment_method']) && isset($data['paymentMethod'])) {
+                    $status['payment_method'] = $data['paymentMethod'];
+                }
+            } else {
+                return response()->json(['message' => 'Diterima.']);
+            }
         }
 
         $nominal = (int) ($status['gross_amount'] ?? 0);
@@ -113,13 +155,13 @@ class MayarController extends Controller
             return response()->json(['message' => 'Nominal tidak cocok.'], Response::HTTP_CONFLICT);
         }
 
-        $ekstra = $status['extraData'] ?? null;
-        $orderId = is_array($ekstra) ? (string) ($ekstra['orderId'] ?? '') : '';
+        $ekstraStatus = $status['extraData'] ?? $ekstra ?? null;
+        $orderIdCocok = is_array($ekstraStatus) ? (string) ($ekstraStatus['orderId'] ?? '') : '';
 
-        if ($orderId !== '' && $orderId !== $pembayaran->nomor_invoice) {
+        if ($orderIdCocok !== '' && $orderIdCocok !== $pembayaran->nomor_invoice) {
             Log::warning('orderId di extraData tidak cocok dengan invoice.', [
                 'invoice' => $pembayaran->nomor_invoice,
-                'order_id' => $orderId,
+                'order_id' => $orderIdCocok,
             ]);
 
             return response()->json(['message' => 'Invoice tidak cocok.'], Response::HTTP_CONFLICT);

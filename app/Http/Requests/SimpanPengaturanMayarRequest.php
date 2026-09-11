@@ -26,6 +26,7 @@ class SimpanPengaturanMayarRequest extends FormRequest
     {
         return [
             'api_key' => ['nullable', 'string', 'max:2048'],
+            'webhook_secret' => ['nullable', 'string', 'max:255'],
             'is_production' => ['sometimes', 'required', 'boolean'],
             'timeout' => ['nullable', 'integer', 'min:1', 'max:120'],
         ];
@@ -37,6 +38,8 @@ class SimpanPengaturanMayarRequest extends FormRequest
         return [
             'api_key.string' => 'Kredensial harus berupa teks.',
             'api_key.max' => 'Kredensial terlalu panjang.',
+            'webhook_secret.string' => 'Webhook secret harus berupa teks.',
+            'webhook_secret.max' => 'Webhook secret terlalu panjang.',
             'is_production.boolean' => 'Nilai mode pembayaran tidak valid.',
             'timeout.integer' => 'Batas waktu harus berupa angka bulat.',
             'timeout.min' => 'Batas waktu minimal 1 detik.',
@@ -56,6 +59,10 @@ class SimpanPengaturanMayarRequest extends FormRequest
 
         if ($this->exists('api_key')) {
             $data['api_key'] = trim((string) $this->input('api_key'));
+        }
+
+        if ($this->exists('webhook_secret')) {
+            $data['webhook_secret'] = trim((string) $this->input('webhook_secret'));
         }
 
         if ($this->exists('is_production')) {

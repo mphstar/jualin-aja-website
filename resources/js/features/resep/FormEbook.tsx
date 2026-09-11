@@ -104,6 +104,12 @@ const skema = z.object({
             error: 'Jumlah halaman harus lebih dari 0.',
         })
         .optional(),
+    harga: z
+        .string()
+        .refine((v) => v === '' || (Number(v) >= 0 && Number.isInteger(Number(v))), {
+            error: 'Harga harus angka bulat positif atau nol.',
+        })
+        .optional(),
 }).superRefine((nilai, ctx) => {
     if (nilai.jenis === 'RESEP' && !nilai.kategori) {
         ctx.addIssue({
@@ -161,6 +167,7 @@ export function FormEbook({ id }: { id?: string }) {
             deskripsi: '',
             status: 'DRAF',
             jumlahHalaman: '',
+            harga: '',
         },
         mode: 'onTouched',
     });
@@ -195,6 +202,9 @@ export function FormEbook({ id }: { id?: string }) {
                     status: ebook.status,
                     jumlahHalaman: ebook.jumlahHalaman
                         ? String(ebook.jumlahHalaman)
+                        : '',
+                    harga: ebook.harga != null
+                        ? String(ebook.harga)
                         : '',
                 });
             })
@@ -241,6 +251,7 @@ export function FormEbook({ id }: { id?: string }) {
             jumlahHalaman: nilai.jumlahHalaman
                 ? Number(nilai.jumlahHalaman)
                 : undefined,
+            harga: nilai.harga ? Number(nilai.harga) : undefined,
         };
 
         try {
@@ -526,6 +537,33 @@ export function FormEbook({ id }: { id?: string }) {
                                         </FormItem>
                                     )}
                                 />
+
+                                <FormField
+                                    control={form.control}
+                                    name="harga"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>
+                                                Harga satuan (Rp)
+                                            </FormLabel>
+                                            <FormControl>
+                                                <Input
+                                                    type="number"
+                                                    min={0}
+                                                    className="w-52"
+                                                    placeholder="25000"
+                                                    {...field}
+                                                />
+                                            </FormControl>
+                                            <FormDescription>
+                                                Harga beli satuan. Isi 0 atau
+                                                kosongkan untuk memakai default
+                                                Rp 25.000.
+                                            </FormDescription>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
                             </CardContent>
                         </Card>
 
@@ -634,9 +672,9 @@ export function FormEbook({ id }: { id?: string }) {
                                                             </span>
                                                             <span className="block text-xs text-muted-foreground">
                                                                 Bisa diunduh
-                                                                semua pelanggan
-                                                                berlangganan
-                                                                aktif.
+                                                                oleh pelanggan
+                                                                yang mengklaim
+                                                                atau membeli.
                                                             </span>
                                                         </span>
                                                     </Label>

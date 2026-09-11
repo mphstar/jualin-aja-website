@@ -10,6 +10,7 @@ use App\Enums\StatusPembayaran;
 use App\Enums\SumberLangganan;
 use App\Enums\TargetAksi;
 use App\Exceptions\KesalahanDomain;
+use App\Models\AksesPustaka;
 use App\Models\Pembayaran;
 use App\Services\PencatatAktivitas;
 use Illuminate\Support\Facades\DB;
@@ -48,7 +49,18 @@ final readonly class TandaiPembayaranLunas
                 targetLabel: $pembayaran->nomor_invoice,
             );
 
-            if ($pembayaran->durasi !== DurasiPaket::Trial) {
+            if ($pembayaran->ebook_id !== null || $pembayaran->tipe === Pembayaran::TIPE_PUSTAKA_SATUAN) {
+                $pembayaran->loadMissing('ebook');
+
+                AksesPustaka::firstOrCreate([
+                    'pos_user_id' => $pembayaran->pos_user_id,
+                    'ebook_id' => $pembayaran->ebook_id,
+                ], [
+                    'jenis' => $pembayaran->ebook?->jenis->value ?? 'RESEP',
+                    'tipe_akses' => AksesPustaka::TIPE_BELI_SATUAN,
+                    'pembayaran_id' => $pembayaran->id,
+                ]);
+            } elseif ($pembayaran->durasi !== DurasiPaket::Trial) {
                 $pembayaran->loadMissing('posUser');
 
                 $langganan = ($this->perpanjangLangganan)(

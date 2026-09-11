@@ -148,6 +148,8 @@ Route::prefix('mobile/v1')->name('api.mobile.')->group(function (): void {
             ->name('tagihan.periksa');
 
         Route::get('resep', [PosEbookController::class, 'index'])->name('resep.index');
+        Route::post('resep/{ebook}/klaim', [PosEbookController::class, 'klaim'])->name('resep.klaim');
+        Route::post('resep/{ebook}/beli', [PosEbookController::class, 'beli'])->name('resep.beli');
         Route::post('resep/{ebook}/unduh', [PosEbookController::class, 'unduh'])->name('resep.unduh');
 
         Route::get('tiket', [PosTiketController::class, 'index'])->name('tiket.index');
@@ -216,6 +218,11 @@ Route::prefix('mobile/v1')->name('api.mobile.')->group(function (): void {
 */
 
 Route::post('mayar/notifikasi/{rahasia}', [MayarController::class, 'notifikasi'])
-    ->where('rahasia', '[A-Za-z0-9]{32,}')
+    ->where('rahasia', '[A-Za-z0-9_\-]+')
     ->middleware('throttle:30,1')
     ->name('api.mayar.notifikasi');
+
+// Mayar kadang mengirim GET ping untuk verifikasi URL hidup sebelum POST.
+Route::get('mayar/notifikasi/{rahasia}', fn () => response()->json(['message' => 'OK']))
+    ->where('rahasia', '[A-Za-z0-9_\-]+')
+    ->name('api.mayar.notifikasi.ping');
