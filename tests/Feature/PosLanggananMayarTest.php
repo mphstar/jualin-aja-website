@@ -48,7 +48,7 @@ final class GerbangTiruan implements GerbangPembayaran
             tautanBayar: 'https://pay.contoh.myr.id/inv/1',
             instruksi: [
                 'tipe' => 'qr_code',
-                'qrUrl' => 'https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=contoh',
+                'qrString' => '00020101021226650013CO.XENDIT.WWW',
                 'kodeBayar' => null,
                 'kodePerusahaan' => null,
                 'aksi' => [],
@@ -128,7 +128,10 @@ it('membuat tagihan menunggu beserta instrumen QR native', function (): void {
         ->assertJsonPath('saluran', 'qris')
         ->assertJsonPath('saluranLabel', 'QRIS')
         ->assertJsonPath('instruksi.tipe', 'qr_code')
-        ->assertJsonPath('instruksi.qrUrl', 'https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=contoh')
+        ->assertJsonPath('instruksi.qrString', '00020101021226650013CO.XENDIT.WWW')
+        // Muatan QRIS dikirim mentah supaya digambar aplikasi sendiri — tidak
+        // boleh ada URL gambar milik layanan pihak ketiga di sini.
+        ->assertJsonMissingPath('instruksi.qrUrl')
         ->assertJsonPath('tautanBayar', 'https://pay.contoh.myr.id/inv/1');
 
     $pembayaran = Pembayaran::query()->firstOrFail();
@@ -510,7 +513,9 @@ it('mengirim invoice QRIS dan membaca instrumen kode QR-nya', function (): void 
     expect($hasil->transactionId)->toBe('trx-mayar-1')
         ->and($hasil->tautanBayar)->toBe('https://pay.contoh.myr.id/inv/1')
         ->and($hasil->instruksi['tipe'])->toBe('qr_code')
-        ->and($hasil->instruksi['qrUrl'])->toContain('000201010212');
+        // Mentah, apa adanya — bukan URL. Aplikasi yang menggambar kodenya.
+        ->and($hasil->instruksi['qrString'])->toBe('000201010212...')
+        ->and($hasil->instruksi)->not->toHaveKey('qrUrl');
 
     Http::assertSent(
         fn ($request): bool => $request['paymentMethod'] === 'qris'
@@ -614,4 +619,129 @@ it('menjelaskan penolakan create termasuk kode dan pesan Mayar', function (): vo
     Log::shouldHaveReceived('warning')
         ->withArgs(fn (string $pesan, array $konteks): bool => str_contains($pesan, 'Mayar menolak')
             && ($konteks['status_code'] ?? null) === 429);
+});
+
+// ---------------------------------------------------------------------------
+// Zona waktu — batas bayar disimpan dalam app timezone, bukan UTC Mayar
+// ---------------------------------------------------------------------------
+
+/**
+ * Pasang gerbang Mayar yang SEBENARNYA dengan jaringan dipalsukan.
+ *
+ * `gerbangTiruan()` tidak bisa dipakai untuk menguji ini: ia mengembalikan
+ * `CarbonImmutable::now()` tanpa argumen timezone, jadi hasilnya sudah app
+ * timezone dan bugnya tidak pernah terlihat.
+ *
+ * @param  array<string, mixed>  $data  Badan `data` jawaban create invoice.
+ */
+function gerbangMayarPalsu(array $data): void
+{
+    Http::fake([
+        'api.mayar.io/hl/v2/invoices/create' => Http::response([
+            'statusCode' => 200,
+            'messages' => 'success',
+            'data' => $data,
+        ]),
+    ]);
+
+    app()->instance(GerbangPembayaran::class, new MayarGerbang(apiKey: 'kunci', produksi: false));
+}
+
+/** Jawaban create invoice QRIS standar, dengan `expires_at` yang bisa diatur. */
+function jawabanQris(CarbonImmutable $berakhir, mixed $expiresAt): array
+{
+    return [
+        'id' => 'inv-mayar-1',
+        'transactionId' => 'trx-mayar-1',
+        'link' => 'https://pay.contoh.myr.id/inv/1',
+        'expiredAt' => $berakhir->getTimestampMs(),
+        'paymentDetail' => [
+            'type' => 'QR_CODE',
+            'qr_code' => ['channel_properties' => array_filter([
+                'qr_string' => '000201010212...',
+                'expires_at' => $expiresAt,
+            ], fn (mixed $v): bool => $v !== null)],
+        ],
+    ];
+}
+
+it('menyimpan batas bayar dalam app timezone, bukan UTC yang dijawab Mayar', function (): void {
+    // Titik tetap: pergeseran zona jadi selisih yang pasti, bukan bergantung
+    // pada jam berapa tes ini kebetulan dijalankan.
+    $beku = CarbonImmutable::parse('2026-09-14 20:00:00', 'Asia/Jakarta');
+    $this->travelTo($beku);
+
+    // Mayar berbicara UTC — 21:00 WIB sampai ke sana sebagai 14:00Z.
+    $berakhir = $beku->addHour();
+    gerbangMayarPalsu(jawabanQris($berakhir, $berakhir->setTimezone('UTC')->format('Y-m-d\TH:i:s\Z')));
+
+    $this->actingAs(tokoBerlangganan(), 'pos')
+        ->postJson(route('api.mobile.tagihan.store'), [
+            'durasi' => 'BULANAN',
+            'saluran' => 'qris',
+        ])->assertCreated()
+        ->assertJsonPath('status', 'MENUNGGU');
+
+    $pembayaran = Pembayaran::query()->firstOrFail();
+
+    /*
+     * Yang dibandingkan adalah INSTANT-nya, bukan jam dindingnya.
+     *
+     * Inilah asersi yang dulu tidak ada: tes sebelumnya hanya membandingkan
+     * `batas_bayar` dengan `kedaluwarsa_saluran`, dan karena keduanya bergeser
+     * bersama, selisih tujuh jam lolos tanpa terlihat. Kolom `datetime`
+     * menyimpan jam dinding apa adanya, jadi Carbon UTC yang bocor dari gerbang
+     * tersimpan tujuh jam lebih awal dan membacanya kembali sebagai WIB.
+     */
+    expect($pembayaran->batas_bayar?->getTimestamp())->toBe($berakhir->getTimestamp())
+        ->and($pembayaran->kedaluwarsa_saluran?->getTimestamp())->toBe($berakhir->getTimestamp())
+        ->and($pembayaran->lewatBatas())->toBeFalse()
+        ->and($pembayaran->statusKini())->toBe(StatusPembayaran::Menunggu);
+
+    // Mayar tetap menerima instant yang benar, apa pun format teksnya.
+    Http::assertSent(fn ($request): bool => CarbonImmutable::parse((string) $request['expiredAt'])->getTimestamp() === $berakhir->getTimestamp());
+});
+
+it('memakai batas bayar lokal saat Mayar tidak menyebut kedaluwarsa saluran', function (): void {
+    // Cabang satunya lagi: `paymentDetail` ada tapi tanpa `expires_at`, sehingga
+    // batasnya jatuh ke waktu yang dihitung sendiri. Kedua cabang harus sepakat
+    // soal zona — dulu cabang ini WIB dan cabang di atas UTC.
+    $beku = CarbonImmutable::parse('2026-09-14 20:00:00', 'Asia/Jakarta');
+    $this->travelTo($beku);
+
+    gerbangMayarPalsu(jawabanQris($beku->addHour(), null));
+
+    $this->actingAs(tokoBerlangganan(), 'pos')
+        ->postJson(route('api.mobile.tagihan.store'), [
+            'durasi' => 'BULANAN',
+            'saluran' => 'qris',
+        ])->assertCreated();
+
+    $pembayaran = Pembayaran::query()->firstOrFail();
+
+    expect($pembayaran->kedaluwarsa_saluran)->toBeNull()
+        ->and($pembayaran->batas_bayar?->getTimestamp())->toBe($beku->addHour()->getTimestamp())
+        ->and($pembayaran->statusKini())->toBe(StatusPembayaran::Menunggu);
+});
+
+it('membaca expires_at epoch detik tanpa mendarat di tahun 1970', function (): void {
+    $beku = CarbonImmutable::parse('2026-09-14 20:00:00', 'Asia/Jakarta');
+    $this->travelTo($beku);
+
+    // `expires_at` tidak didefinisikan dokumen Mayar mana pun. Epoch detik yang
+    // terbaca sebagai milidetik mendarat di 1970, dan batas bayar 1970 membuat
+    // tagihan terbaca kedaluwarsa sejak detik pertama.
+    gerbangMayarPalsu(jawabanQris($beku->addHour(), $beku->addHour()->getTimestamp()));
+
+    $this->actingAs(tokoBerlangganan(), 'pos')
+        ->postJson(route('api.mobile.tagihan.store'), [
+            'durasi' => 'BULANAN',
+            'saluran' => 'qris',
+        ])->assertCreated();
+
+    $pembayaran = Pembayaran::query()->firstOrFail();
+
+    expect($pembayaran->batas_bayar?->year)->toBe(2026)
+        ->and($pembayaran->batas_bayar?->getTimestamp())->toBe($beku->addHour()->getTimestamp())
+        ->and($pembayaran->statusKini())->toBe(StatusPembayaran::Menunggu);
 });

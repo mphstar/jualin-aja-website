@@ -30,6 +30,15 @@ use Illuminate\Support\Facades\Log;
  * dua endpoint; menambah dependensi untuk itu berarti menambah sesuatu yang
  * harus ikut diperbarui setiap kali ada CVE di pohon dependensinya.
  *
+ * **Waktu keluar dari sini selalu dalam `app.timezone`, tidak pernah UTC.**
+ * Mayar berbicara UTC di kabel, jadi konversinya terjadi di sini dan hanya di
+ * sini — lihat `buatTransaksi()`. Kolom `datetime` Laravel menyimpan jam dinding
+ * apa adanya tanpa mengonversi, dan membacanya kembali dalam `app.timezone`
+ * (timezone koneksi basis data tidak disetel). Menyerahkan Carbon UTC ke
+ * pemanggil berarti setiap batas bayar tersimpan lebih awal sebesar offset
+ * zona, dan tagihan berumur satu jam akan terbaca kedaluwarsa sejak detik
+ * pertama ia dibuat.
+ *
  * @see https://docs.mayar.id/api-reference-v2/invoice/create.md
  * @see https://docs.mayar.id/api-reference-v2/transaction/detail.md
  */
@@ -42,8 +51,7 @@ final readonly class MayarGerbang implements GerbangPembayaran
         private ?string $apiKey,
         private bool $produksi,
         private int $timeout = 15,
-    ) {
-    }
+    ) {}
 
     public function buatTransaksi(Pembayaran $pembayaran, SaluranBayar $saluran): HasilCharge
     {
@@ -52,13 +60,14 @@ final readonly class MayarGerbang implements GerbangPembayaran
 
         $batasBayar = CarbonImmutable::now(config('app.timezone'))->addHours(self::JAM_KEDALUWARSA);
 
-        // expiredAt untuk Mayar harus dalam UTC — Mayar tidak mengenal
-        // timezone lokal.
+        // HANYA untuk badan permintaan. Mayar tidak mengenal timezone lokal,
+        // jadi `expiredAt` dikirim dalam UTC — tapi `$batasBayar` di bawah tetap
+        // dalam app timezone, karena itulah yang disimpan ke basis data.
         $batasBayarUtc = $batasBayar->setTimezone('UTC');
 
         $deskripsiItem = $pembayaran->ebook !== null
-            ? 'Pembelian Pustaka: ' . $pembayaran->ebook->judul
-            : 'Langganan Jualin Aja ' . $pembayaran->durasi->label();
+            ? 'Pembelian Pustaka: '.$pembayaran->ebook->judul
+            : 'Langganan Jualin Aja '.$pembayaran->durasi->label();
 
         $badan = [
             'name' => trim($toko->nama),
@@ -69,9 +78,9 @@ final readonly class MayarGerbang implements GerbangPembayaran
                     'quantity' => 1,
                     'rate' => (int) $pembayaran->nominal,
                     'description' => mb_substr($deskripsiItem, 0, 255),
-                ]
+                ],
             ],
-            'description' => mb_substr('Invoice ' . $pembayaran->nomor_invoice, 0, 255),
+            'description' => mb_substr('Invoice '.$pembayaran->nomor_invoice, 0, 255),
             'expiredAt' => $batasBayarUtc->toIso8601String(),
             'paymentMethod' => $saluran->value,
             // Id pesanan kita sendiri — dibaca ulang dari transaksi, bukan dari
@@ -79,8 +88,8 @@ final readonly class MayarGerbang implements GerbangPembayaran
             'extraData' => ['orderId' => $pembayaran->nomor_invoice],
         ];
 
-        $jawaban = $this->kirim(fn(PendingRequest $http): Response => $http->post(
-            $this->basisApi() . '/hl/v2/invoices/create',
+        $jawaban = $this->kirim(fn (PendingRequest $http): Response => $http->post(
+            $this->basisApi().'/hl/v2/invoices/create',
             $badan,
         ));
 
@@ -99,14 +108,14 @@ final readonly class MayarGerbang implements GerbangPembayaran
             // membingungkan pembeli dengan pesan mentah Mayar.
             if (($jawaban['statusCode'] ?? null) === 409) {
                 $pesan = 'Tagihan untuk pesanan ini sudah pernah dibuat di Mayar. '
-                    . 'Periksa ulang riwayat pembayaran atau hubungi dukungan.';
+                    .'Periksa ulang riwayat pembayaran atau hubungi dukungan.';
             }
 
             if (($jawaban['statusCode'] ?? null) === 429) {
                 $pesan .= ' Coba lagi beberapa saat.';
             }
 
-            throw new KesalahanDomain('Gagal membuat tagihan: ' . $pesan);
+            throw new KesalahanDomain('Gagal membuat tagihan: '.$pesan);
         }
 
         $instruksi = $this->parsePaymentDetail($data['paymentDetail'] ?? null);
@@ -116,9 +125,10 @@ final readonly class MayarGerbang implements GerbangPembayaran
             transactionId: (string) ($data['transactionId'] ?? ''),
             orderId: (string) ($data['id'] ?? ''),
             payload: $jawaban,
+            // Keduanya sudah dalam app timezone — pemanggil menyimpannya
+            // langsung ke kolom `datetime` tanpa konversi lagi.
             batasBayar: $kedaluwarsaSaluran ?? $batasBayar,
             kedaluwarsaSaluran: $kedaluwarsaSaluran,
-            qrUrl: $instruksi['qrUrl'] ?? null,
             tautanBayar: (string) ($data['link'] ?? ''),
             instruksi: $instruksi,
         );
@@ -131,7 +141,7 @@ final readonly class MayarGerbang implements GerbangPembayaran
 
         if ($transactionId !== '') {
             try {
-                $jawaban = $this->kirim(fn(PendingRequest $http): Response => $http->get(
+                $jawaban = $this->kirim(fn (PendingRequest $http): Response => $http->get(
                     sprintf('%s/hl/v2/transactions/%s', $this->basisApi(), rawurlencode($transactionId)),
                 ));
 
@@ -145,7 +155,7 @@ final readonly class MayarGerbang implements GerbangPembayaran
         }
 
         if ($orderId !== '') {
-            $jawaban = $this->kirim(fn(PendingRequest $http): Response => $http->get(
+            $jawaban = $this->kirim(fn (PendingRequest $http): Response => $http->get(
                 sprintf('%s/hl/v2/invoices/%s', $this->basisApi(), rawurlencode($orderId)),
             ));
 
@@ -193,6 +203,10 @@ final readonly class MayarGerbang implements GerbangPembayaran
      * pun — perlakukan sebagai masukan tak tepercaya. Bentuk yang tidak dikenal
      * mengembalikan null, dan layar jatuh ke tautan hosted.
      *
+     * `qrString` adalah muatan QRIS mentah, dan itulah yang dikirim — bukan URL
+     * gambar. Aplikasi menggambar kodenya sendiri, sehingga muatan QRIS (identitas
+     * merchant dan nominal) tidak pernah singgah di layanan pihak ketiga.
+     *
      * @return array<string, mixed>|null
      */
     private function parsePaymentDetail(mixed $paymentDetail): ?array
@@ -214,7 +228,7 @@ final readonly class MayarGerbang implements GerbangPembayaran
 
             return [
                 'tipe' => 'qr_code',
-                'qrUrl' => 'https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=' . rawurlencode($qr),
+                'qrString' => $qr,
                 'kodeBayar' => null,
                 'kodePerusahaan' => null,
                 'aksi' => [],
@@ -233,6 +247,10 @@ final readonly class MayarGerbang implements GerbangPembayaran
      *
      * Kode QR berhenti bekerja pada waktunya sendiri berapa pun kata invoice.
      * Kalau tidak terlihat, gunakan kedaluwarsa invoice.
+     *
+     * Hasilnya dikembalikan dalam app timezone — Mayar menjawab UTC, dan waktu
+     * UTC yang bocor ke pemanggil akan tersimpan lebih awal sebesar offset
+     * zona.
      */
     private function kedaluwarsaSaluran(mixed $paymentDetail): ?CarbonImmutable
     {
@@ -241,13 +259,22 @@ final readonly class MayarGerbang implements GerbangPembayaran
         $properti = is_array($kelompok) ? ($kelompok['channel_properties'] ?? []) : [];
         $berakhir = is_array($properti) ? ($properti['expires_at'] ?? null) : null;
 
-        return $this->bacaWaktu($berakhir);
+        return $this->bacaWaktu($berakhir)?->setTimezone(config('app.timezone'));
     }
 
     private function bacaWaktu(mixed $nilai): ?CarbonImmutable
     {
         if (is_numeric($nilai)) {
-            return CarbonImmutable::createFromTimestampMs((int) $nilai);
+            $angka = (int) $nilai;
+
+            // Mayar memakai epoch MILIDETIK, tapi `expires_at` tidak
+            // didefinisikan dokumen mana pun. Epoch detik yang terbaca sebagai
+            // milidetik mendarat di tahun 1970 — dan batas bayar 1970 membuat
+            // tagihan terbaca kedaluwarsa sejak detik pertama. Nilai di bawah
+            // 1e11 (≈ tahun 5138 dalam milidetik) pasti detik, bukan milidetik.
+            return $angka < 100_000_000_000
+                ? CarbonImmutable::createFromTimestamp($angka)
+                : CarbonImmutable::createFromTimestampMs($angka);
         }
 
         if (is_string($nilai) && $nilai !== '') {
@@ -336,7 +363,7 @@ final readonly class MayarGerbang implements GerbangPembayaran
                     ->retry(
                         2,
                         200,
-                        fn(\Throwable $galat): bool => !$galat instanceof RequestException,
+                        fn (\Throwable $galat): bool => ! $galat instanceof RequestException,
                         throw: false,
                     ),
             );
@@ -349,7 +376,7 @@ final readonly class MayarGerbang implements GerbangPembayaran
         /** @var array<string, mixed> $badan */
         $badan = $respons->json() ?? [];
 
-        if (!$respons->successful()) {
+        if (! $respons->successful()) {
             Log::warning('Mayar menolak permintaan.', [
                 'basis' => $this->basisApi(),
                 'status' => $respons->status(),

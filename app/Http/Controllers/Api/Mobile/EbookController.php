@@ -28,7 +28,7 @@ use Symfony\Component\HttpFoundation\Response;
  * bisa melihat daftar, tapi hanya yang membuka yang bisa membaca isinya.
  * Akses per-konten berasal dari dua sumber:
  *
- * 1. Klaim jatah langganan — 1 Resep + 1 Prompt gratis untuk pelanggan aktif.
+ * 1. Klaim jatah langganan — 1 Resep + 1 Prompt gratis per SIKLUS langganan.
  * 2. Beli satuan — tagihan Mayar per konten, terbuka permanen setelah lunas.
  */
 class EbookController extends Controller
@@ -40,17 +40,12 @@ class EbookController extends Controller
         $toko = $this->toko($request);
         $toko->load('aksesPustaka');
 
-        $punyaLanggananAktif = $toko->versiLangganan() === VersiLangganan::Langganan;
-
-        $sudahKlaim = collect([
-            JenisKonten::Resep->value => false,
-            JenisKonten::Prompt->value => false,
-        ]);
-        foreach ($toko->aksesPustaka as $akses) {
-            if ($akses->tipe_akses === AksesPustaka::TIPE_KLAIM_LANGGANAN) {
-                $sudahKlaim[$akses->jenis] = true;
-            }
-        }
+        // Aturan jatahnya hidup di PosUser, bukan di sini — supaya daftar dan
+        // endpoint klaim tidak pernah bisa berbeda pendapat.
+        $bolehKlaim = [
+            JenisKonten::Resep->value => $toko->bolehKlaimJenis(JenisKonten::Resep),
+            JenisKonten::Prompt->value => $toko->bolehKlaimJenis(JenisKonten::Prompt),
+        ];
 
         $daftar = Ebook::query()
             ->where('status', StatusEbook::Terbit->value)
@@ -62,7 +57,7 @@ class EbookController extends Controller
             $daftar->map(fn (Ebook $e): EbookPosResource => new EbookPosResource(
                 $e,
                 bolehUnduh: $toko->punyaAksesEbook($e->id),
-                bisaKlaim: $punyaLanggananAktif && ! $sudahKlaim[$e->jenis->value],
+                bisaKlaim: $bolehKlaim[$e->jenis->value],
             )),
         );
     }
@@ -70,9 +65,11 @@ class EbookController extends Controller
     /**
      * Klaim 1 Resep / 1 Prompt gratis dengan jatah langganan.
      *
-     * Jatahnya 1 per JENIS konten, bukan 1 total: pelanggan boleh membawa
-     * pulang satu resep dan satu prompt. Yang sudah diklaim tetap terbuka
-     * walau langganannya nanti berhenti — klaimnya tidak ditarik kembali.
+     * Jatahnya 1 per JENIS konten per SIKLUS langganan, bukan 1 total dan bukan
+     * sekali seumur akun: pelanggan boleh membawa pulang satu resep dan satu
+     * prompt, dan tiap siklus baru membuka jatah itu lagi. Konten yang sudah
+     * pernah diklaim tetap tersimpan barisnya — mengklaimnya ulang tidak
+     * menghabiskan jatah siklus berjalan.
      */
     public function klaim(Request $request, Ebook $ebook): JsonResponse
     {
@@ -100,7 +97,7 @@ class EbookController extends Controller
         if ($toko->sudahKlaimJenis($jenis)) {
             return response()->json([
                 'message' => sprintf(
-                    'Jatah klaim %s gratis sudah terpakai. Konten lain bisa dibeli satuan.',
+                    'Jatah klaim %s untuk siklus langganan ini sudah terpakai. Konten lain bisa dibeli satuan.',
                     $jenis->label(),
                 ),
                 'kode' => 'JATAH_KLAIM_HABIS',
@@ -124,8 +121,13 @@ class EbookController extends Controller
      * Beli satuan — terbitkan tagihan Mayar untuk membuka satu konten.
      *
      * Terbuka permanen setelah lunas, terlepas dari status langganan.
+     *
+     * Kembaliannya union karena konten yang sudah terbuka dijawab 409, bukan
+     * dengan tagihan. Deklarasi tunggal `TagihanResource` membuat cabang itu
+     * melempar TypeError di bawah `strict_types` — dan galat 500 itulah yang
+     * sampai ke pengguna, bukan pesan ramahnya.
      */
-    public function beli(Request $request, Ebook $ebook, BuatTagihanPustaka $buat): TagihanResource
+    public function beli(Request $request, Ebook $ebook, BuatTagihanPustaka $buat): TagihanResource|JsonResponse
     {
         $toko = $this->toko($request);
 

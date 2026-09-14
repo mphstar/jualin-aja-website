@@ -30,7 +30,6 @@ use Illuminate\Support\Carbon;
  * @property Carbon|null $berlaku_sampai
  * @property string|null $kode_bayar
  * @property string|null $kode_perusahaan
- * @property string|null $qr_url
  * @property string|null $tautan_bayar
  * @property array<string, mixed>|null $instruksi_bayar
  * @property string|null $catatan
@@ -46,7 +45,7 @@ use Illuminate\Support\Carbon;
     'nomor_invoice', 'pos_user_id', 'langganan_id', 'nominal', 'durasi', 'tipe', 'ebook_id',
     'metode', 'saluran', 'status', 'tanggal', 'batas_bayar',
     'kedaluwarsa_saluran', 'berlaku_sampai', 'kode_bayar', 'kode_perusahaan',
-    'qr_url', 'tautan_bayar', 'instruksi_bayar', 'catatan',
+    'tautan_bayar', 'instruksi_bayar', 'catatan',
     'mayar_order_id', 'mayar_transaction_id', 'mayar_payload', 'dibayar_pada',
 ])]
 class Pembayaran extends Model

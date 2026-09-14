@@ -17,8 +17,14 @@ use Illuminate\Http\Resources\Json\JsonResource;
  * pembayaran akan terus menampilkan instrumen yang sudah tidak berlaku.
  *
  * `instruksi` adalah instrumen native yang dinormalisasi backend (kode QR,
- * nomor VA, atau aksi e-wallet). `tautanBayar` adalah halaman hosted Mayar —
- * cadangan yang dipakai ketika instrumen tidak dikenal.
+ * nomor VA, atau aksi e-wallet). Untuk QRIS ia memuat `qrString` — muatan QRIS
+ * mentah yang digambar aplikasi sendiri, bukan URL gambar. `tautanBayar` adalah
+ * halaman hosted Mayar — cadangan yang dipakai ketika instrumen tidak dikenal.
+ *
+ * `tipe` membedakan tagihan langganan dari pembelian satuan Pustaka. Layar
+ * pembayaran membutuhkannya: tagihan Pustaka memakai `durasi` placeholder
+ * (kolomnya NOT NULL) dan `berlakuSampai` null, jadi tanpa `tipe` keduanya
+ * akan terbaca sebagai pembelian langganan satu bulan yang berakhir hari ini.
  *
  * @mixin Pembayaran
  */
@@ -33,6 +39,7 @@ class TagihanResource extends JsonResource
 
         return [
             'id' => (string) $this->id,
+            'tipe' => $this->tipe,
             'nomorInvoice' => $this->nomor_invoice,
             'durasi' => $this->durasi->value,
             'durasiLabel' => $this->durasi->label(),
@@ -47,7 +54,6 @@ class TagihanResource extends JsonResource
             'dibayarPada' => $this->dibayar_pada?->toISOString(),
             'kodeBayar' => $this->kode_bayar,
             'kodePerusahaan' => $this->kode_perusahaan,
-            'qrUrl' => $this->qr_url,
             'tautanBayar' => $this->tautan_bayar,
             'instruksi' => $this->instruksi_bayar,
         ];

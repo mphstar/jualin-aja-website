@@ -119,7 +119,6 @@ final readonly class BuatTagihanLangganan
             'kedaluwarsa_saluran' => $hasil->kedaluwarsaSaluran,
             'kode_bayar' => $hasil->kodeBayar,
             'kode_perusahaan' => $hasil->kodePerusahaan,
-            'qr_url' => $hasil->qrUrl,
             'tautan_bayar' => $hasil->tautanBayar,
             'instruksi_bayar' => $hasil->instruksi,
         ]);

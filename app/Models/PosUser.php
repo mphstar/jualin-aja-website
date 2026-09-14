@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Enums\DurasiPaket;
+use App\Enums\JenisKonten;
 use App\Enums\JenisUsaha;
 use App\Enums\StatusLangganan;
 use App\Enums\SumberLangganan;
@@ -207,14 +208,44 @@ class PosUser extends Authenticatable
     }
 
     /**
-     * Apakah toko sudah mengklaim 1 gratis untuk jenis konten ini (Resep / Prompt).
+     * Sejak kapan jatah klaim siklus berjalan dihitung.
+     *
+     * Jatah klaim melekat pada SATU SIKLUS langganan, bukan pada umur akun:
+     * tiap siklus baru — dari pelunasan invoice maupun perpanjangan manual
+     * admin, keduanya lewat [PerpanjangLangganan] — membuka jatah 1 Resep + 1
+     * Prompt lagi.
+     *
+     * Patokannya `created_at` baris `langganan` termuda, BUKAN `tanggal_mulai`.
+     * Perpanjangan lebih awal menyambung dari akhir siklus lama, jadi
+     * `tanggal_mulai` siklus baru justru ada di masa depan — memakainya akan
+     * menunda jatah baru sampai siklus itu benar-benar mulai.
+     */
+    public function jatahKlaimMulaiSejak(): ?CarbonInterface
+    {
+        return $this->langganan()->latest('id')->value('created_at');
+    }
+
+    /**
+     * Apakah toko sudah mengklaim 1 gratis untuk jenis konten ini (Resep / Prompt)
+     * pada siklus langganan yang sedang berjalan.
+     *
+     * Memakai query, bukan koleksi `aksesPustaka` yang mungkin sudah dimuat:
+     * batas waktunya harus dihitung di database, dan pemanggilnya cuma sekali
+     * per jenis.
      */
     public function sudahKlaimJenis(JenisKonten $jenis): bool
     {
-        return $this->aksesPustaka
+        $sejak = $this->jatahKlaimMulaiSejak();
+
+        if ($sejak === null) {
+            return false;
+        }
+
+        return $this->aksesPustaka()
             ->where('jenis', $jenis->value)
             ->where('tipe_akses', AksesPustaka::TIPE_KLAIM_LANGGANAN)
-            ->isNotEmpty();
+            ->where('created_at', '>=', $sejak)
+            ->exists();
     }
 
     /**
