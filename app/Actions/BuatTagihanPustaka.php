@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Actions;
 
 use App\Contracts\GerbangPembayaran;
-use App\Enums\DurasiPaket;
 use App\Enums\SaluranBayar;
 use App\Enums\StatusPembayaran;
 use App\Exceptions\KesalahanDomain;
@@ -52,7 +51,8 @@ final readonly class BuatTagihanPustaka
                 'nomor_invoice' => (new NomorInvoiceBerikutnya)($sekarang),
                 'pos_user_id' => $toko->id,
                 'nominal' => $nominal,
-                'durasi' => DurasiPaket::Bulanan, // default placeholder
+                // Tanpa durasi: pembelian satuan tidak memperpanjang apa pun.
+                'durasi' => null,
                 'tipe' => Pembayaran::TIPE_PUSTAKA_SATUAN,
                 'ebook_id' => $ebook->id,
                 'metode' => $saluran->grup(),

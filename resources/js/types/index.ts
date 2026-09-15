@@ -20,6 +20,13 @@ export type SumberLangganan =
 export type StatusPembayaran =
     'LUNAS' | 'MENUNGGU' | 'GAGAL' | 'KEDALUWARSA' | 'REFUND';
 
+/**
+ * Jenis tagihan: perpanjangan masa aktif, atau pembelian konten Pustaka
+ * satuan. Menentukan apa yang terjadi saat invoice ditandai lunas, dan
+ * menentukan pula apakah `durasi` terisi.
+ */
+export type TipePembayaran = 'LANGGANAN' | 'PUSTAKA_SATUAN';
+
 export type MetodePembayaran =
     | 'TRANSFER_BANK'
     | 'QRIS'
@@ -111,9 +118,13 @@ export interface Pembayaran {
     id: string;
     nomorInvoice: string;
     userId: string;
+    tipe: TipePembayaran;
     langgananId?: string;
     nominal: number; // rupiah penuh, bukan sen
-    durasi: DurasiPaket;
+    /** null untuk pembelian satuan Pustaka — ia tidak memperpanjang masa aktif. */
+    durasi: DurasiPaket | null;
+    /** Judul konten yang dibeli; hanya diisi untuk tagihan PUSTAKA_SATUAN. */
+    ebookJudul?: string | null;
     metode: MetodePembayaran;
     status: StatusPembayaran;
     tanggal: string; // ISO

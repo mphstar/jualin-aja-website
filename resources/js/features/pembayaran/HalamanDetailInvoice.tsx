@@ -8,7 +8,10 @@ import {
 import { useCallback, useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
 import { toast } from 'sonner';
-import { BadgeStatusPembayaran } from '@/components/shared/BadgeStatus';
+import {
+    BadgeStatusPembayaran,
+    BadgeTipePembayaran,
+} from '@/components/shared/BadgeStatus';
 import { DialogKonfirmasi } from '@/components/shared/DialogKonfirmasi';
 import { ErrorState } from '@/components/shared/StateTabel';
 import { Button } from '@/components/ui/button';
@@ -18,11 +21,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { api, KesalahanApi } from '@/lib/api';
 import type { DetailInvoice } from '@/lib/api';
 import { formatRupiah, formatTanggalPanjang } from '@/lib/format';
-import {
-    LABEL_DURASI,
-    LABEL_JENIS_USAHA,
-    LABEL_METODE_PEMBAYARAN,
-} from '@/lib/konstanta';
+import { LABEL_JENIS_USAHA, LABEL_METODE_PEMBAYARAN } from '@/lib/konstanta';
+import { kalimatPelunasan, labelPaketPembayaran } from '@/lib/pembayaran';
 
 export function HalamanDetailInvoice({ id }: { id: string }) {
     const [data, setData] = useState<DetailInvoice | null>(null);
@@ -74,12 +74,13 @@ export function HalamanDetailInvoice({ id }: { id: string }) {
 
     const { pembayaran, user } = data;
     const belumLunas = pembayaran.status !== 'LUNAS';
+    const pustaka = pembayaran.tipe === 'PUSTAKA_SATUAN';
 
     async function jalankanLunas() {
         try {
             await api.pembayaran.tandaiLunas(id);
             toast.success('Invoice ditandai lunas', {
-                description: `Langganan ${user.namaToko} otomatis diperpanjang ${LABEL_DURASI[pembayaran.durasi]}.`,
+                description: kalimatPelunasan(pembayaran, user.namaToko),
             });
             await muat();
         } catch (e) {
@@ -159,7 +160,8 @@ export function HalamanDetailInvoice({ id }: { id: string }) {
                             <p className="angka-tabular text-lg font-semibold">
                                 {pembayaran.nomorInvoice}
                             </p>
-                            <div className="mt-1 flex justify-end">
+                            <div className="mt-1 flex flex-wrap justify-end gap-1.5">
+                                <BadgeTipePembayaran tipe={pembayaran.tipe} />
                                 <BadgeStatusPembayaran
                                     status={pembayaran.status}
                                 />
@@ -203,8 +205,8 @@ export function HalamanDetailInvoice({ id }: { id: string }) {
                             <Baris label="Metode">
                                 {LABEL_METODE_PEMBAYARAN[pembayaran.metode]}
                             </Baris>
-                            <Baris label="Paket">
-                                {LABEL_DURASI[pembayaran.durasi]}
+                            <Baris label="Paket / Konten">
+                                {labelPaketPembayaran(pembayaran)}
                             </Baris>
                         </div>
                     </div>
@@ -214,11 +216,14 @@ export function HalamanDetailInvoice({ id }: { id: string }) {
                     <div className="flex items-start justify-between gap-4">
                         <div>
                             <p className="font-medium">
-                                Langganan {LABEL_DURASI[pembayaran.durasi]}
+                                {pustaka
+                                    ? labelPaketPembayaran(pembayaran)
+                                    : `Langganan ${labelPaketPembayaran(pembayaran)}`}
                             </p>
                             <p className="text-sm text-muted-foreground">
-                                Akses penuh aplikasi POS dan seluruh ebook resep
-                                terbit.
+                                {pustaka
+                                    ? 'Membuka akses konten ini untuk tokonya. Masa langganan tidak ikut bertambah.'
+                                    : 'Akses penuh aplikasi POS dan seluruh ebook resep terbit.'}
                             </p>
                         </div>
                         <p className="angka-tabular whitespace-nowrap">
@@ -249,9 +254,8 @@ export function HalamanDetailInvoice({ id }: { id: string }) {
 
                     {pembayaran.status === 'MENUNGGU' && (
                         <p className="mt-6 rounded-md border border-peringatan/25 bg-peringatan-lembut p-3 text-sm text-peringatan">
-                            Invoice ini belum dibayar. Menandainya lunas akan
-                            langsung memperpanjang masa langganan{' '}
-                            {user.namaToko}.
+                            Invoice ini belum dibayar. Bila ditandai lunas:{' '}
+                            {kalimatPelunasan(pembayaran, user.namaToko)}
                         </p>
                     )}
                 </CardContent>
@@ -263,12 +267,8 @@ export function HalamanDetailInvoice({ id }: { id: string }) {
                 judul="Tandai invoice lunas"
                 keterangan={
                     <>
-                        Langganan{' '}
-                        <span className="font-medium text-foreground">
-                            {user.namaToko}
-                        </span>{' '}
-                        akan otomatis diperpanjang{' '}
-                        {LABEL_DURASI[pembayaran.durasi].toLowerCase()}.
+                        Invoice ini akan ditandai lunas.{' '}
+                        {kalimatPelunasan(pembayaran, user.namaToko)}
                     </>
                 }
                 labelKonfirmasi="Tandai lunas"

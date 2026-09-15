@@ -5,13 +5,14 @@ import type { PembayaranRingkas } from '@/types';
 
 type Filter = Pick<
     ParamsPembayaran,
-    'cari' | 'status' | 'metode' | 'dari' | 'sampai'
+    'cari' | 'status' | 'metode' | 'tipe' | 'dari' | 'sampai'
 >;
 
 const FILTER_AWAL: Filter = {
     cari: '',
     status: 'SEMUA',
     metode: 'SEMUA',
+    tipe: 'SEMUA',
     dari: undefined,
     sampai: undefined,
 };

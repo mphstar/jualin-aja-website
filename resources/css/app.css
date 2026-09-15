@@ -75,6 +75,28 @@
     --info-lembut: oklch(0.951 0.026 236.824);
     --bahaya-lembut: oklch(0.954 0.038 17.38);
 
+    /*
+     * Panggung halaman masuk.
+     *
+     * `/login` satu-satunya halaman di luar kerangka panel, jadi ia juga
+     * satu-satunya yang punya warnanya sendiri. Token ini sengaja TIDAK
+     * menjalar ke halaman lain — oranye yang bocor ke tabel, badge, dan grafik
+     * akan beradu dengan indigo yang sudah jadi bahasa panel.
+     *
+     * `--oranye` dan `--hijau` disalin dari logo (public/logo.png). `--kanvas`
+     * dan `--pekat` bukan dari logo melainkan dari komposisi referensi: bingkai
+     * hangat di sekeliling panel merek yang gelap.
+     */
+    --kanvas: oklch(0.837 0.011 63.3);
+    --pekat: oklch(0.255 0.011 36.5);
+    --oranye: oklch(0.638 0.168 42.3);
+    /* Ujung gelap gradien tombol — diturunkan dari `--oranye`, bukan dari logo. */
+    --oranye-tua: oklch(0.569 0.186 28.1);
+    /* Hijau tua wordmark. Sengaja tanpa pasangan gelap: di tema gelap teksnya
+       memakai `--foreground`, karena hijau segelap ini hilang di atas kartu
+       gelap. */
+    --hijau: oklch(0.227 0.041 161.4);
+
     /* Tangga biru satu rona, bukan pelangi — grafik ikut disiplin yang sama
      dengan sisa panel: kroma hanya untuk membedakan deret, bukan menghias. */
     --chart-1: oklch(0.488 0.243 264.376);
@@ -127,6 +149,16 @@
     --info-foreground: oklch(0.379 0.146 265.522);
     --info-lembut: oklch(0.379 0.146 265.522 / 35%);
     --bahaya-lembut: oklch(0.396 0.141 25.723 / 35%);
+
+    /*
+     * Panggung halaman masuk versi gelap. Urutan terangnya dibalik: `--kanvas`
+     * kini yang paling gelap dan panel merek naik sedikit di atasnya, supaya
+     * bingkai → panel → kartu tetap terbaca sebagai tiga bidang berbeda.
+     */
+    --kanvas: oklch(0.145 0.005 60);
+    --pekat: oklch(0.185 0.008 50);
+    --oranye: oklch(0.705 0.165 46.9);
+    --oranye-tua: oklch(0.628 0.179 28.1);
 
     --chart-1: oklch(0.585 0.233 263);
     --chart-2: oklch(0.672 0.176 260);
@@ -193,6 +225,11 @@
 
     --color-brand: var(--brand);
 
+    --color-kanvas: var(--kanvas);
+    --color-pekat: var(--pekat);
+    --color-oranye: var(--oranye);
+    --color-hijau: var(--hijau);
+
     --radius-sm: calc(var(--radius) - 4px);
     --radius-md: calc(var(--radius) - 2px);
     --radius-lg: var(--radius);
@@ -246,5 +283,22 @@
     /* Angka rata kolom pada tabel & kartu statistik */
     .angka-tabular {
         font-variant-numeric: tabular-nums;
+    }
+}
+
+@layer components {
+    /*
+     * Tombol utama halaman masuk: gradien oranye logo → merah.
+     *
+     * Ditulis sebagai kelas, bukan utilitas arbitrary di `className`, karena
+     * gradien dua variabel warna jadi deretan tanda kurung dan koma yang tidak
+     * bisa dibaca lagi di dalam JSX.
+     */
+    .tombol-gradien {
+        background-image: linear-gradient(
+            to right,
+            var(--oranye),
+            var(--oranye-tua)
+        );
     }
 }

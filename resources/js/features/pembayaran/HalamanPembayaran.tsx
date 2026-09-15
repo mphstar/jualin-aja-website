@@ -33,10 +33,12 @@ import { formatAngka, formatRupiah } from '@/lib/format';
 import {
     DAFTAR_METODE_PEMBAYARAN,
     DAFTAR_STATUS_PEMBAYARAN,
-    LABEL_DURASI,
+    DAFTAR_TIPE_PEMBAYARAN,
     LABEL_METODE_PEMBAYARAN,
     LABEL_STATUS_PEMBAYARAN,
+    LABEL_TIPE_PEMBAYARAN,
 } from '@/lib/konstanta';
+import { kalimatPelunasan } from '@/lib/pembayaran';
 import { usePembayaranStore } from '@/stores/pembayaranStore';
 import type { PembayaranRingkas } from '@/types';
 
@@ -86,6 +88,7 @@ export function HalamanPembayaran() {
 
     const adaFilter =
         (filter.cari ?? '') !== '' ||
+        filter.tipe !== 'SEMUA' ||
         filter.status !== 'SEMUA' ||
         filter.metode !== 'SEMUA' ||
         Boolean(filter.dari) ||
@@ -106,7 +109,10 @@ export function HalamanPembayaran() {
         try {
             await tandaiLunas(targetLunas.id);
             toast.success('Invoice ditandai lunas', {
-                description: `Langganan ${targetLunas.namaToko} otomatis diperpanjang ${LABEL_DURASI[targetLunas.durasi]}.`,
+                description: kalimatPelunasan(
+                    targetLunas,
+                    targetLunas.namaToko,
+                ),
             });
         } catch (e) {
             toast.error(
@@ -147,6 +153,25 @@ export function HalamanPembayaran() {
                         aria-label="Cari pembayaran"
                     />
                 </div>
+
+                <Select
+                    value={filter.tipe ?? 'SEMUA'}
+                    onValueChange={(v) =>
+                        setFilter({ tipe: v as typeof filter.tipe })
+                    }
+                >
+                    <SelectTrigger className="w-full sm:w-[170px]">
+                        <SelectValue placeholder="Jenis" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="SEMUA">Semua jenis</SelectItem>
+                        {DAFTAR_TIPE_PEMBAYARAN.map((t) => (
+                            <SelectItem key={t} value={t}>
+                                {LABEL_TIPE_PEMBAYARAN[t]}
+                            </SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
 
                 <Select
                     value={filter.status ?? 'SEMUA'}
@@ -232,7 +257,7 @@ export function HalamanPembayaran() {
         <>
             <PageHeader
                 judul="Riwayat Pembayaran"
-                keterangan="Tagihan langganan beserta status pembayarannya."
+                keterangan="Tagihan langganan dan pembelian Pustaka satuan beserta status pembayarannya."
             />
 
             <div className="mb-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -283,7 +308,7 @@ export function HalamanPembayaran() {
                         keterangan={
                             adaFilter
                                 ? 'Coba longgarkan kata kunci, filter, atau rentang tanggalnya.'
-                                : 'Tagihan langganan akan muncul di sini.'
+                                : 'Tagihan langganan dan pembelian Pustaka satuan akan muncul di sini.'
                         }
                         aksi={
                             adaFilter ? (
@@ -301,18 +326,19 @@ export function HalamanPembayaran() {
                 onTutup={() => setTargetLunas(null)}
                 judul="Tandai invoice lunas"
                 keterangan={
-                    <>
-                        Invoice{' '}
-                        <span className="font-medium text-foreground">
-                            {targetLunas?.nomorInvoice}
-                        </span>{' '}
-                        akan ditandai lunas, dan langganan{' '}
-                        <span className="font-medium text-foreground">
-                            {targetLunas?.namaToko}
-                        </span>{' '}
-                        otomatis diperpanjang{' '}
-                        {targetLunas ? LABEL_DURASI[targetLunas.durasi] : ''}.
-                    </>
+                    targetLunas ? (
+                        <>
+                            Invoice{' '}
+                            <span className="font-medium text-foreground">
+                                {targetLunas.nomorInvoice}
+                            </span>{' '}
+                            akan ditandai lunas.{' '}
+                            {kalimatPelunasan(
+                                targetLunas,
+                                targetLunas.namaToko,
+                            )}
+                        </>
+                    ) : null
                 }
                 labelKonfirmasi="Tandai lunas"
                 onKonfirmasi={jalankanLunas}

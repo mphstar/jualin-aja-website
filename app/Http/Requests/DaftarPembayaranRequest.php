@@ -6,6 +6,7 @@ namespace App\Http\Requests;
 
 use App\Enums\MetodePembayaran;
 use App\Enums\StatusPembayaran;
+use App\Models\Pembayaran;
 use Carbon\CarbonImmutable;
 
 class DaftarPembayaranRequest extends DaftarRequest
@@ -17,6 +18,7 @@ class DaftarPembayaranRequest extends DaftarRequest
             ...$this->aturanDaftar(),
             'status' => $this->aturanFilterEnum(StatusPembayaran::class),
             'metode' => $this->aturanFilterEnum(MetodePembayaran::class),
+            'tipe' => ['nullable', 'string', 'in:SEMUA,'.Pembayaran::TIPE_LANGGANAN.','.Pembayaran::TIPE_PUSTAKA_SATUAN],
             'dari' => ['nullable', 'date'],
             'sampai' => ['nullable', 'date', 'after_or_equal:dari'],
         ];
@@ -30,6 +32,17 @@ class DaftarPembayaranRequest extends DaftarRequest
     public function metode(): ?MetodePembayaran
     {
         return $this->filterEnum('metode', MetodePembayaran::class);
+    }
+
+    /**
+     * `tipe` masih konstanta string di model, bukan enum, jadi ia tidak bisa
+     * lewat `filterEnum()`. Perilaku `SEMUA`-nya tetap sama.
+     */
+    public function tipe(): ?string
+    {
+        $nilai = (string) $this->string('tipe');
+
+        return $nilai === '' || $nilai === 'SEMUA' ? null : $nilai;
     }
 
     public function dari(): ?CarbonImmutable

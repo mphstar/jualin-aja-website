@@ -49,6 +49,10 @@ class EbookPosResource extends JsonResource
             'ukuranMb' => $this->ukuran_berkas_bytes === null
                 ? null
                 : round($this->ukuran_berkas_bytes / 1_048_576, 1),
+            // Berapa kali konten ini dibuka. Endpoint `unduh` juga yang dipakai
+            // untuk membuka/pratinjau dari aplikasi, jadi angkanya menghitung
+            // BUKA, bukan cuma unduh — dan labelnya di aplikasi harus begitu.
+            'jumlahUnduhan' => $this->jumlah_unduhan,
             'harga' => $this->harga,
             'terbuka' => $terbuka,
             'statusAkses' => $this->hitungStatusAkses($terbuka),

@@ -7,11 +7,13 @@ import type {
     PembayaranRingkas,
     PosUser,
     StatusPembayaran,
+    TipePembayaran,
 } from '@/types';
 
 export interface ParamsPembayaran extends ParamsHalaman {
     status?: StatusPembayaran | 'SEMUA';
     metode?: MetodePembayaran | 'SEMUA';
+    tipe?: TipePembayaran | 'SEMUA';
     dari?: string;
     sampai?: string;
 }

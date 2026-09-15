@@ -55,6 +55,7 @@ import {
     LABEL_METODE_PEMBAYARAN,
     LABEL_SUMBER_LANGGANAN,
 } from '@/lib/konstanta';
+import { labelPaketPembayaran } from '@/lib/pembayaran';
 
 export function HalamanDetailPengguna({ id }: { id: string }) {
     const [detail, setDetail] = useState<DetailPengguna | null>(null);
@@ -364,7 +365,9 @@ export function HalamanDetailPengguna({ id }: { id: string }) {
                                         <TableRow className="hover:bg-transparent">
                                             <TableHead>Invoice</TableHead>
                                             <TableHead>Tanggal</TableHead>
-                                            <TableHead>Paket</TableHead>
+                                            <TableHead>
+                                                Paket / Konten
+                                            </TableHead>
                                             <TableHead>Metode</TableHead>
                                             <TableHead>Status</TableHead>
                                             <TableHead className="text-right">
@@ -387,7 +390,7 @@ export function HalamanDetailPengguna({ id }: { id: string }) {
                                                     {formatTanggal(p.tanggal)}
                                                 </TableCell>
                                                 <TableCell className="text-sm whitespace-nowrap">
-                                                    {LABEL_DURASI[p.durasi]}
+                                                    {labelPaketPembayaran(p)}
                                                 </TableCell>
                                                 <TableCell className="text-sm whitespace-nowrap text-muted-foreground">
                                                     {

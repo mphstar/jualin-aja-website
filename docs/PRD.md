@@ -152,13 +152,19 @@ Satu fungsi murni `hitungStatusLangganan(langganan, sekarang)` dipakai di **semu
 
 | ID | Kebutuhan |
 |---|---|
-| F6.1 | Tabel: No. Invoice, User, Nominal, Durasi, Metode, Status, Tanggal |
+| F6.1 | Tabel: No. Invoice, User, Tanggal, Jenis, Paket/Konten, Metode, Status, Nominal |
 | F6.2 | Status: **Lunas** (hijau) · **Menunggu** (oranye) · **Gagal** (merah) · **Refund** (abu) |
 | F6.3 | Metode: Transfer Bank · QRIS · Virtual Account · Manual/Tunai |
-| F6.4 | Filter: status, metode, rentang tanggal; pencarian no. invoice / nama user |
+| F6.4 | Filter: jenis, status, metode, rentang tanggal; pencarian no. invoice / nama user |
 | F6.5 | Ringkasan di atas tabel: total lunas bulan ini, jumlah menunggu, jumlah gagal |
 | F6.6 | Detail `/pembayaran/:id`: tampilan invoice (data user, rincian paket, total, status), tombol **Tandai Lunas** untuk yang menunggu |
-| F6.7 | Menandai lunas → memperpanjang langganan user terkait + entri log |
+| F6.7 | Menandai lunas → **Langganan**: masa aktif user terkait diperpanjang. **Pustaka satuan**: akses konten itu dibuka, masa aktif tidak disentuh. Keduanya menulis entri log |
+
+> Satu tabel `pembayaran` menampung dua jenis tagihan, dibedakan kolom `tipe`:
+> **Langganan** (memperpanjang masa aktif, `durasi` terisi) dan **Pustaka satuan**
+> (membeli satu konten, `durasi` null, terikat `ebook_id`). Kolom "Paket/Konten"
+> menampilkan durasi untuk yang pertama dan judul konten untuk yang kedua — jadi
+> `durasi` tidak boleh dibaca tanpa memeriksa `tipe` lebih dulu.
 
 ### M7 · Log Aktivitas (`/aktivitas`)
 
@@ -183,6 +189,7 @@ type StatusLangganan = 'AKTIF' | 'AKAN_BERAKHIR' | 'KEDALUWARSA' | 'TRIAL' | 'NO
 type SumberLangganan = 'TRIAL' | 'PEMBELIAN' | 'PERPANJANGAN_MANUAL' | 'HADIAH';
 type StatusPembayaran = 'LUNAS' | 'MENUNGGU' | 'GAGAL' | 'REFUND';
 type MetodePembayaran = 'TRANSFER_BANK' | 'QRIS' | 'VIRTUAL_ACCOUNT' | 'MANUAL';
+type TipePembayaran = 'LANGGANAN' | 'PUSTAKA_SATUAN';
 type KategoriEbook = 'MINUMAN' | 'MAKANAN_BERAT' | 'SNACK' | 'DESSERT' | 'BAKERY' | 'BUMBU_SAUS';
 type StatusEbook   = 'DRAF' | 'TERBIT';
 type JenisUsaha    = 'KAFE' | 'RESTORAN' | 'WARUNG_MAKAN' | 'BAKERY' | 'TOKO_KELONTONG' | 'LAINNYA';
@@ -206,7 +213,10 @@ interface Langganan {
 
 interface Pembayaran {
   id; nomorInvoice; userId; langgananId?;
-  nominal: number; durasi: DurasiPaket;
+  tipe: TipePembayaran;
+  nominal: number;
+  durasi: DurasiPaket | null;             // null untuk PUSTAKA_SATUAN
+  ebookJudul?: string | null;             // diisi hanya untuk PUSTAKA_SATUAN
   metode: MetodePembayaran; status: StatusPemba yaran;
   tanggal: string; catatan?: string;
 }

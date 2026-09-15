@@ -1,11 +1,15 @@
 import { Link } from '@inertiajs/react';
 import type { ColumnDef } from '@tanstack/react-table';
-import { BadgeStatusPembayaran } from '@/components/shared/BadgeStatus';
+import {
+    BadgeStatusPembayaran,
+    BadgeTipePembayaran,
+} from '@/components/shared/BadgeStatus';
 import { SelPengguna } from '@/components/shared/SelPengguna';
 import { AksiPembayaran } from '@/features/pembayaran/AksiPembayaran';
 import type { OpsiKolom } from '@/features/pembayaran/AksiPembayaran';
 import { formatRupiah, formatTanggal } from '@/lib/format';
-import { LABEL_DURASI, LABEL_METODE_PEMBAYARAN } from '@/lib/konstanta';
+import { LABEL_METODE_PEMBAYARAN } from '@/lib/konstanta';
+import { labelPaketPembayaran } from '@/lib/pembayaran';
 import type { PembayaranRingkas } from '@/types';
 
 export function buatKolomPembayaran(
@@ -47,12 +51,20 @@ export function buatKolomPembayaran(
             ),
         },
         {
-            accessorKey: 'durasi',
-            header: 'Paket',
+            accessorKey: 'tipe',
+            header: 'Jenis',
+            enableSorting: false,
+            cell: ({ row }) => <BadgeTipePembayaran tipe={row.original.tipe} />,
+        },
+        {
+            // Bukan `accessorKey: 'durasi'`: untuk pembelian Pustaka sel ini
+            // berisi judul kontennya, bukan durasi.
+            id: 'paket',
+            header: 'Paket / Konten',
             enableSorting: false,
             cell: ({ row }) => (
                 <span className="text-sm whitespace-nowrap">
-                    {LABEL_DURASI[row.original.durasi]}
+                    {labelPaketPembayaran(row.original)}
                 </span>
             ),
         },

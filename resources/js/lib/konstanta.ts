@@ -10,6 +10,7 @@ import type {
     StatusLangganan,
     StatusPembayaran,
     SumberLangganan,
+    TipePembayaran,
 } from '@/types';
 
 /** Ambang "akan berakhir" dalam hari — dipakai dasbor & badge status. */
@@ -36,16 +37,6 @@ export const HARGA_PAKET_DEFAULT: Record<DurasiPaket, number> = {
     SEMESTERAN: 499_000,
     TAHUNAN: 899_000,
 };
-
-/**
- * Kredensial akun yang dibuat DatabaseSeeder. Ditampilkan di halaman login
- * karena ini lingkungan pengembangan — hapus blok hint-nya sebelum rilis.
- * Nilainya harus sama dengan Database\Seeders\DatabaseSeeder::EMAIL_ADMIN.
- */
-export const KREDENSIAL_DEMO = {
-    email: 'admin@jualinaja.id',
-    kataSandi: 'admin123',
-} as const;
 
 // ============================================================
 // Label Bahasa Indonesia untuk seluruh union
@@ -79,6 +70,11 @@ export const LABEL_STATUS_PEMBAYARAN: Record<StatusPembayaran, string> = {
     GAGAL: 'Gagal',
     KEDALUWARSA: 'Kedaluwarsa',
     REFUND: 'Refund',
+};
+
+export const LABEL_TIPE_PEMBAYARAN: Record<TipePembayaran, string> = {
+    LANGGANAN: 'Langganan',
+    PUSTAKA_SATUAN: 'Pustaka Satuan',
 };
 
 export const LABEL_METODE_PEMBAYARAN: Record<MetodePembayaran, string> = {
@@ -163,6 +159,9 @@ export const DAFTAR_JENIS_USAHA = Object.keys(
 export const DAFTAR_STATUS_PEMBAYARAN = Object.keys(
     LABEL_STATUS_PEMBAYARAN,
 ) as StatusPembayaran[];
+export const DAFTAR_TIPE_PEMBAYARAN = Object.keys(
+    LABEL_TIPE_PEMBAYARAN,
+) as TipePembayaran[];
 export const DAFTAR_METODE_PEMBAYARAN = Object.keys(
     LABEL_METODE_PEMBAYARAN,
 ) as MetodePembayaran[];

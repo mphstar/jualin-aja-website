@@ -21,10 +21,10 @@ use Illuminate\Http\Resources\Json\JsonResource;
  * mentah yang digambar aplikasi sendiri, bukan URL gambar. `tautanBayar` adalah
  * halaman hosted Mayar — cadangan yang dipakai ketika instrumen tidak dikenal.
  *
- * `tipe` membedakan tagihan langganan dari pembelian satuan Pustaka. Layar
- * pembayaran membutuhkannya: tagihan Pustaka memakai `durasi` placeholder
- * (kolomnya NOT NULL) dan `berlakuSampai` null, jadi tanpa `tipe` keduanya
- * akan terbaca sebagai pembelian langganan satu bulan yang berakhir hari ini.
+ * `tipe` membedakan tagihan langganan dari pembelian satuan Pustaka. Tagihan
+ * Pustaka tidak memperpanjang masa aktif, jadi `durasi` dan `berlakuSampai`-nya
+ * null; layar pembayaran memilih mana yang ditampilkan berdasarkan `tipe`, dan
+ * tidak boleh membaca `durasi` tanpa memeriksanya lebih dulu.
  *
  * @mixin Pembayaran
  */
@@ -41,8 +41,8 @@ class TagihanResource extends JsonResource
             'id' => (string) $this->id,
             'tipe' => $this->tipe,
             'nomorInvoice' => $this->nomor_invoice,
-            'durasi' => $this->durasi->value,
-            'durasiLabel' => $this->durasi->label(),
+            'durasi' => $this->durasi?->value,
+            'durasiLabel' => $this->durasi?->label(),
             'nominal' => $this->nominal,
             'saluran' => $saluran?->value,
             'saluranLabel' => $saluran?->label(),

@@ -3,10 +3,16 @@ import {
     LABEL_STATUS_EBOOK,
     LABEL_STATUS_LANGGANAN,
     LABEL_STATUS_PEMBAYARAN,
+    LABEL_TIPE_PEMBAYARAN,
 } from '@/lib/konstanta';
 import { AMBANG_AKAN_BERAKHIR } from '@/lib/konstanta';
 import { cn } from '@/lib/utils';
-import type { StatusEbook, StatusLangganan, StatusPembayaran } from '@/types';
+import type {
+    StatusEbook,
+    StatusLangganan,
+    StatusPembayaran,
+    TipePembayaran,
+} from '@/types';
 
 /**
  * Pola warna badge: latar lembut + teks pekat, memakai token yang
@@ -93,6 +99,35 @@ export function BadgeStatusPembayaran({
         <span className={cn(DASAR, GAYA[nada], className)}>
             <Titik nada={nada} />
             {LABEL_STATUS_PEMBAYARAN[status]}
+        </span>
+    );
+}
+
+// ------------------------------------------------------------
+// Jenis pembayaran
+// ------------------------------------------------------------
+
+const NADA_TIPE: Record<TipePembayaran, Nada> = {
+    // Langganan adalah mayoritas, jadi dialah yang dibuat paling sunyi — yang
+    // perlu menonjol di tabel justru pengecualiannya.
+    LANGGANAN: 'netral',
+    PUSTAKA_SATUAN: 'info',
+};
+
+/**
+ * Tanpa titik di depan label: ini penanda jenis, bukan tingkat urgensi, dan
+ * titik akan membuatnya bersaing dengan badge status di baris yang sama.
+ */
+export function BadgeTipePembayaran({
+    tipe,
+    className,
+}: {
+    tipe: TipePembayaran;
+    className?: string;
+}) {
+    return (
+        <span className={cn(DASAR, GAYA[NADA_TIPE[tipe]], className)}>
+            {LABEL_TIPE_PEMBAYARAN[tipe]}
         </span>
     );
 }

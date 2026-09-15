@@ -68,6 +68,14 @@ function statusAkses(int $ebookId): string
     return collect($daftar)->firstWhere('id', (string) $ebookId)['statusAkses'];
 }
 
+/** `jumlahUnduhan` sebuah ebook pada jawaban `GET resep`. */
+function jumlahBuka(int $ebookId): int
+{
+    $daftar = test()->getJson(route('api.mobile.resep.index'))->assertSuccessful()->json();
+
+    return (int) collect($daftar)->firstWhere('id', (string) $ebookId)['jumlahUnduhan'];
+}
+
 it('menolak klaim dari akun tanpa langganan berbayar', function (): void {
     $ebook = Ebook::factory()->create();
 
@@ -194,4 +202,26 @@ it('menolak klaim konten yang belum terbit', function (): void {
         ->assertNotFound();
 
     expect(AksesPustaka::query()->count())->toBe(0);
+});
+
+it('katalog Pustaka membawa jumlah buka konten', function (): void {
+    // Angka ini yang menjadi dasar lencana "Terpopuler" di aplikasi, jadi ia
+    // harus ada sejak nol — field yang hilang membuat lencananya lenyap tanpa
+    // jejak, dan tidak ada yang tahu kenapa.
+    $toko = tokoSiklus();
+    $resep = Ebook::factory()->create(['berkas_path' => 'ebooks/contoh.pdf']);
+
+    $this->actingAs($toko, 'pos');
+    expect(jumlahBuka($resep->id))->toBe(0);
+
+    $this->postJson(route('api.mobile.resep.klaim', $resep))->assertSuccessful();
+
+    // Endpoint `unduh` juga yang dipakai aplikasi untuk membuka/pratinjau,
+    // jadi membukanya sekali harus menaikkan angka yang sama. `fresh()`
+    // penting: relasi `aksesPustaka` sudah termuat sebelum klaim, dan tanpa
+    // memuat ulang pintunya masih terbaca tertutup.
+    $this->actingAs($toko->fresh(), 'pos');
+    $this->postJson(route('api.mobile.resep.unduh', $resep))->assertSuccessful();
+
+    expect(jumlahBuka($resep->id))->toBe(1);
 });

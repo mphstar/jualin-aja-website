@@ -2,6 +2,7 @@
 .github
 .agents
 .claude
+.qwen
 node_modules
 vendor
 public/build

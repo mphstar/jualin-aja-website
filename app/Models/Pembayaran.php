@@ -20,7 +20,9 @@ use Illuminate\Support\Carbon;
  * @property int $pos_user_id
  * @property int|null $langganan_id
  * @property int $nominal
- * @property DurasiPaket $durasi
+ * @property DurasiPaket|null $durasi Hanya untuk tagihan langganan; pembelian
+ *                                    satuan Pustaka tidak memperpanjang masa
+ *                                    aktif, jadi kolomnya null.
  * @property MetodePembayaran $metode
  * @property string|null $saluran
  * @property StatusPembayaran $status

@@ -7,6 +7,8 @@ use App\Enums\JenisAksi;
 use App\Enums\MetodePembayaran;
 use App\Enums\StatusPembayaran;
 use App\Enums\SumberLangganan;
+use App\Models\AksesPustaka;
+use App\Models\Ebook;
 use App\Models\Langganan;
 use App\Models\LogAktivitas;
 use App\Models\Pembayaran;
@@ -140,4 +142,68 @@ it('menolak menggagalkan invoice yang sudah lunas', function (): void {
     $this->postJson("/api/v1/pembayaran/{$pembayaran->id}/tandai-gagal")->assertStatus(422);
 
     expect($pembayaran->refresh()->status)->toBe(StatusPembayaran::Lunas);
+});
+
+/*
+ * Riwayat pembelian Pustaka satuan sudah lama ikut terkirim ke panel admin —
+ * ia memakai tabel `pembayaran` yang sama — tapi tanpa penanda apa pun. Kolom
+ * `durasi` yang dulu dipaksa berisi `BULANAN` membuat barisnya terbaca sebagai
+ * langganan satu bulan, dan judul konten yang dibeli tidak ikut dikirim.
+ */
+it('mengirim jenis, judul konten, dan durasi kosong untuk pembelian Pustaka', function (): void {
+    $toko = PosUser::factory()->create();
+    $ebook = Ebook::factory()->create(['judul' => 'Kopi Susu Gula Aren']);
+
+    Pembayaran::factory()->create(['pos_user_id' => $toko->id]);
+    $pustaka = Pembayaran::factory()->pustaka($ebook)->create(['pos_user_id' => $toko->id]);
+
+    $baris = collect($this->getJson('/api/v1/pembayaran?tipe=PUSTAKA_SATUAN')
+        ->assertOk()
+        ->json('data'))->sole();
+
+    expect($baris['id'])->toBe((string) $pustaka->id)
+        ->and($baris['tipe'])->toBe(Pembayaran::TIPE_PUSTAKA_SATUAN)
+        ->and($baris['durasi'])->toBeNull()
+        ->and($baris['ebookJudul'])->toBe('Kopi Susu Gula Aren');
+});
+
+it('menyaring riwayat pembayaran menurut jenis tagihan', function (): void {
+    $toko = PosUser::factory()->create();
+
+    Pembayaran::factory()->create(['pos_user_id' => $toko->id]);
+    Pembayaran::factory()->pustaka()->create(['pos_user_id' => $toko->id]);
+
+    expect($this->getJson('/api/v1/pembayaran')->assertOk()->json('total'))->toBe(2)
+        ->and($this->getJson('/api/v1/pembayaran?tipe=LANGGANAN')->assertOk()->json('total'))->toBe(1)
+        ->and($this->getJson('/api/v1/pembayaran?tipe=PUSTAKA_SATUAN')->assertOk()->json('total'))->toBe(1)
+        // `SEMUA` sama dengan tanpa filter, seperti filter lain di panel.
+        ->and($this->getJson('/api/v1/pembayaran?tipe=SEMUA')->assertOk()->json('total'))->toBe(2);
+});
+
+it('membuka akses konten, bukan memperpanjang langganan, saat tagihan Pustaka dilunasi', function (): void {
+    $toko = PosUser::factory()->create();
+    Langganan::factory()->berakhirDalam(10)->create([
+        'pos_user_id' => $toko->id,
+        'sumber' => SumberLangganan::Pembelian,
+    ]);
+    $ebook = Ebook::factory()->create();
+
+    $pembayaran = Pembayaran::factory()->pustaka($ebook)->menunggu()->create([
+        'pos_user_id' => $toko->id,
+    ]);
+
+    $berakhirSebelum = $toko->refresh()->langganan_berakhir_pada->toDateString();
+
+    $this->postJson("/api/v1/pembayaran/{$pembayaran->id}/tandai-lunas")
+        ->assertOk()
+        ->assertJsonPath('tipe', Pembayaran::TIPE_PUSTAKA_SATUAN)
+        ->assertJsonPath('ebookJudul', $ebook->judul);
+
+    expect(AksesPustaka::query()
+        ->where('pos_user_id', $toko->id)
+        ->where('ebook_id', $ebook->id)
+        ->value('tipe_akses'))->toBe(AksesPustaka::TIPE_BELI_SATUAN)
+        // Justru inilah bedanya: masa aktif tidak tersentuh sama sekali.
+        ->and($toko->refresh()->langganan_berakhir_pada->toDateString())->toBe($berakhirSebelum)
+        ->and($pembayaran->refresh()->langganan_id)->toBeNull();
 });

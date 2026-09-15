@@ -44,6 +44,10 @@ class PembayaranController extends Controller
             $query->where('pembayaran.metode', $metode->value);
         }
 
+        if (($tipe = $request->tipe()) !== null) {
+            $query->where('pembayaran.tipe', $tipe);
+        }
+
         if (($dari = $request->dari()) !== null) {
             $query->where('pembayaran.tanggal', '>=', $dari);
         }
@@ -59,7 +63,7 @@ class PembayaranController extends Controller
         };
 
         $halaman = $query
-            ->with('posUser')
+            ->with(['posUser', 'ebook'])
             ->orderBy($kolom, $request->urutArah('desc'))
             ->orderBy('pembayaran.id')
             ->paginate(perPage: $request->perHalaman(10), page: $request->halaman());
@@ -91,7 +95,7 @@ class PembayaranController extends Controller
     /** @return array<string, mixed> */
     public function show(Pembayaran $pembayaran): array
     {
-        $pembayaran->load('posUser');
+        $pembayaran->load(['posUser', 'ebook']);
 
         return [
             'pembayaran' => new PembayaranRingkasResource($pembayaran),
@@ -99,13 +103,20 @@ class PembayaranController extends Controller
         ];
     }
 
+    /*
+     * `loadMissing('ebook')` di kedua aksi di bawah bukan hiasan: resource
+     * membaca judul ebook lewat relasi, dan lazy-load dimatikan di luar
+     * produksi. Untuk invoice Pustaka yang ditandai gagal, tidak ada bagian
+     * lain yang memuatnya — tanpa ini halamannya meledak, bukan sekadar
+     * kehilangan satu kolom.
+     */
     public function tandaiLunas(Pembayaran $pembayaran, TandaiPembayaranLunas $tandai): PembayaranResource
     {
-        return new PembayaranResource($tandai($pembayaran));
+        return new PembayaranResource($tandai($pembayaran)->loadMissing('ebook'));
     }
 
     public function tandaiGagal(Pembayaran $pembayaran, TandaiPembayaranGagal $tandai): PembayaranResource
     {
-        return new PembayaranResource($tandai($pembayaran));
+        return new PembayaranResource($tandai($pembayaran)->loadMissing('ebook'));
     }
 }

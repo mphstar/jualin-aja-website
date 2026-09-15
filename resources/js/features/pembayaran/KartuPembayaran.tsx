@@ -1,9 +1,13 @@
-import { BadgeStatusPembayaran } from '@/components/shared/BadgeStatus';
+import {
+    BadgeStatusPembayaran,
+    BadgeTipePembayaran,
+} from '@/components/shared/BadgeStatus';
 import { SelPengguna } from '@/components/shared/SelPengguna';
 import { AksiPembayaran } from '@/features/pembayaran/AksiPembayaran';
 import type { OpsiKolom } from '@/features/pembayaran/AksiPembayaran';
 import { formatRupiah, formatTanggal } from '@/lib/format';
-import { LABEL_DURASI, LABEL_METODE_PEMBAYARAN } from '@/lib/konstanta';
+import { LABEL_METODE_PEMBAYARAN } from '@/lib/konstanta';
+import { labelPaketPembayaran } from '@/lib/pembayaran';
 import type { PembayaranRingkas } from '@/types';
 
 export function KartuPembayaran({
@@ -30,7 +34,10 @@ export function KartuPembayaran({
             <SelPengguna nama={p.namaUser} namaToko={p.namaToko} />
 
             <div className="flex flex-wrap items-center justify-between gap-2">
-                <BadgeStatusPembayaran status={p.status} />
+                <div className="flex flex-wrap items-center gap-1.5">
+                    <BadgeTipePembayaran tipe={p.tipe} />
+                    <BadgeStatusPembayaran status={p.status} />
+                </div>
                 <span className="angka-tabular font-medium">
                     {formatRupiah(p.nominal)}
                 </span>
@@ -38,9 +45,9 @@ export function KartuPembayaran({
 
             <dl className="grid grid-cols-2 gap-x-4 text-xs text-muted-foreground">
                 <div className="flex justify-between gap-2">
-                    <dt>Paket</dt>
+                    <dt>Paket / Konten</dt>
                     <dd className="text-foreground">
-                        {LABEL_DURASI[p.durasi]}
+                        {labelPaketPembayaran(p)}
                     </dd>
                 </div>
                 <div className="flex justify-between gap-2">

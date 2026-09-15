@@ -20,7 +20,7 @@ use Illuminate\Database\Seeder;
  * Tidak ada data contoh (tanpa 48 toko demo, ebook, tiket, transaksi, atau log
  * aktivitas). Yang dibuat hanya:
  *
- *   1. Admin panel      → admin@jualinaja.id / admin123
+ *   1. Admin panel      → admin@gmail.com / 12345678
  *   2. Akun Langganan   → langganan@jualinaja.id / password123 (paket aktif)
  *   3. Akun Trial       → trial@jualinaja.id / password123 (uji coba aktif)
  *   4. Akun Gratis      → gratis@jualinaja.id / password123 (uji coba habis)
@@ -31,7 +31,9 @@ use Illuminate\Database\Seeder;
  */
 class SeederProduksi extends Seeder
 {
-    public const string EMAIL_ADMIN = 'admin@jualinaja.id';
+    public const string EMAIL_ADMIN = 'admin@gmail.com';
+
+    public const string SANDI_ADMIN = '12345678';
 
     public const string EMAIL_LANGGANAN = 'langganan@jualinaja.id';
 
@@ -56,7 +58,7 @@ class SeederProduksi extends Seeder
             ['email' => self::EMAIL_ADMIN],
             [
                 'name' => 'Admin JualinAja',
-                'password' => 'admin123',
+                'password' => self::SANDI_ADMIN,
                 'email_verified_at' => $sekarang,
                 'terakhir_masuk' => $sekarang,
             ]

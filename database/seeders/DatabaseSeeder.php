@@ -20,7 +20,9 @@ class DatabaseSeeder extends Seeder
 {
     public const string NAMA_ADMIN = 'Bintang Pratama';
 
-    public const string EMAIL_ADMIN = 'admin@jualinaja.id';
+    public const string EMAIL_ADMIN = 'admin@gmail.com';
+
+    public const string SANDI_ADMIN = '12345678';
 
     /** Harga contoh awal (PRD §4.1) — bisa diubah dari halaman Pengaturan. */
     private const array HARGA_PAKET = [
@@ -44,7 +46,7 @@ class DatabaseSeeder extends Seeder
             User::query()->create([
                 'name' => self::NAMA_ADMIN,
                 'email' => self::EMAIL_ADMIN,
-                'password' => 'admin123',
+                'password' => self::SANDI_ADMIN,
                 'email_verified_at' => now(),
                 'terakhir_masuk' => now(),
             ]);

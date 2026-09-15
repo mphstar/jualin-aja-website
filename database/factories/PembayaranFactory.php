@@ -7,6 +7,7 @@ namespace Database\Factories;
 use App\Enums\DurasiPaket;
 use App\Enums\MetodePembayaran;
 use App\Enums\StatusPembayaran;
+use App\Models\Ebook;
 use App\Models\Pembayaran;
 use App\Models\PosUser;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -51,6 +52,22 @@ class PembayaranFactory extends Factory
     {
         return $this->state(fn (array $attributes): array => [
             'status' => StatusPembayaran::Gagal,
+        ]);
+    }
+
+    /**
+     * Pembelian konten Pustaka satuan.
+     *
+     * Yang membedakannya dari tagihan langganan cuma `tipe` dan `ebook_id` —
+     * termasuk `durasi` yang null, sebab pembelian satuan tidak memperpanjang
+     * masa aktif.
+     */
+    public function pustaka(?Ebook $ebook = null): static
+    {
+        return $this->state(fn (array $attributes): array => [
+            'tipe' => Pembayaran::TIPE_PUSTAKA_SATUAN,
+            'ebook_id' => $ebook?->id ?? Ebook::factory(),
+            'durasi' => null,
         ]);
     }
 }

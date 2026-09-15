@@ -28,7 +28,7 @@ it('membuat admin yang bisa dipakai masuk', function (): void {
     $admin = User::query()->sole();
 
     expect($admin->email)->toBe(DatabaseSeeder::EMAIL_ADMIN)
-        ->and(Hash::check('admin123', $admin->password))->toBeTrue();
+        ->and(Hash::check(DatabaseSeeder::SANDI_ADMIN, $admin->password))->toBeTrue();
 });
 
 it('menghasilkan sebaran status persis seperti yang dijanjikan', function (): void {
